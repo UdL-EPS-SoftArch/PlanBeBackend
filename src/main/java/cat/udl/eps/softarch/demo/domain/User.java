@@ -1,5 +1,6 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import jakarta.persistence.*;
@@ -39,11 +40,18 @@ public class User extends UriEntity<String> implements UserDetails {
 	@Length(min = 8, max = 256)
 	private String password;
 
-	@JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+	@Transient
+	@JsonIgnore
 	private boolean passwordReset;
+
+	public void setPassword(String password) {
+		this.password = password;
+		this.passwordReset = true;
+	}
 
 	public void encodePassword() {
 		this.password = passwordEncoder.encode(this.password);
+		this.passwordReset = false;
 	}
 
 	@Override
