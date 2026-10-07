@@ -1,0 +1,16 @@
+allowed-origins: "https://react-template.vercel.app,https://react-template-*.vercel.app"
+default-password: password
+
+server:
+  port: 8080
+  address: 0.0.0.0
+
+logging:
+    level:
+        org:
+            hibernate: info
+            springframework: info
+        com:
+            zaxxer:
+                hikari: info
+        root: info

@@ -1,0 +1,12 @@
+allowed-origins: http://localhost:3000
+default-password: password
+
+logging:
+    level:
+        org:
+            hibernate: warn
+            springframework: warn
+        com:
+            zaxxer:
+                hikari: warn
+        root: warn
