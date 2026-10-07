@@ -1,0 +1,5 @@
+root = true
+
+[*]  # This applies to all files in the project
+indent_style = space
+indent_size = 4
