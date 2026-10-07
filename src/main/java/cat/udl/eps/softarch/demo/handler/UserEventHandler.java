@@ -13,6 +13,9 @@ import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -35,6 +38,12 @@ public class UserEventHandler {
     @HandleBeforeSave
     public void handleUserPreSave(User user) {
         logger.info("Before updating: {}", user.toString());
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !authentication.getName().equals(user.getId())) {
+            throw new AccessDeniedException("Only the user can modify their own account");
+        }
     }
 
     @HandleBeforeDelete
@@ -59,8 +68,8 @@ public class UserEventHandler {
         logger.info("After updating: {}", user.toString());
         if (user.isPasswordReset()) {
             user.encodePassword();
+            userRepository.save(user);
         }
-        userRepository.save(user);
     }
 
     @HandleAfterDelete
