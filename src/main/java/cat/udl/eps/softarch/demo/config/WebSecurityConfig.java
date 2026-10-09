@@ -29,7 +29,7 @@ public class WebSecurityConfig {
         http.authorizeHttpRequests((auth) -> auth
                 .requestMatchers(HttpMethod.GET, "/identity").authenticated()
                 .requestMatchers(HttpMethod.GET, "/users").authenticated()
-                .requestMatchers(HttpMethod.POST, "/users").anonymous()
+                .requestMatchers(HttpMethod.POST, "/users").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/*").denyAll()
                 .requestMatchers(HttpMethod.GET, "/records").permitAll()    // Allow listing public records
                 .requestMatchers(HttpMethod.GET, "/records/*").permitAll()  // Allow retrieving public records
