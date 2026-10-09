@@ -15,6 +15,7 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 
 import java.nio.charset.StandardCharsets;
 
@@ -76,6 +77,10 @@ public class RegisterStepDefs {
     user.setId(username);
     user.setEmail(email);
 
+    var authProcessor = (AuthenticationStepDefs.currentUsername != null)
+        ? SecurityMockMvcRequestPostProcessors.user(AuthenticationStepDefs.currentUsername)
+        : SecurityMockMvcRequestPostProcessors.anonymous();
+
     stepDefs.result = stepDefs.mockMvc.perform(
             post("/users")
                     .contentType(MediaType.APPLICATION_JSON)
@@ -84,7 +89,7 @@ public class RegisterStepDefs {
                     ).put("password", password).toString())
                     .characterEncoding(StandardCharsets.UTF_8)
                     .accept(MediaType.APPLICATION_JSON)
-                    .with(AuthenticationStepDefs.authenticate()))
+                    .with(authProcessor))
             .andDo(print());
   }
 
@@ -105,6 +110,7 @@ public class RegisterStepDefs {
             get("/users/{username}", username)
                     .accept(MediaType.APPLICATION_JSON)
                     .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print())
             .andExpect(status().isNotFound());
   }
 }
