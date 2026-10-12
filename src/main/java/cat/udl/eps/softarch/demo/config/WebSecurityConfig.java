@@ -31,6 +31,7 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/users").authenticated()
                 .requestMatchers(HttpMethod.POST, "/users").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/*").denyAll()
+                .requestMatchers("/invitations", "/invitations/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/records").permitAll()    // Allow listing public records
                 .requestMatchers(HttpMethod.GET, "/records/*").permitAll()  // Allow retrieving public records
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
