@@ -5,8 +5,6 @@ import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
-import org.springframework.data.rest.core.annotation.HandleAfterDelete;
-import org.springframework.data.rest.core.annotation.HandleAfterLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkDelete;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
@@ -14,10 +12,12 @@ import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.server.ResponseStatusException;
 
 @Component
 @RepositoryEventHandler
@@ -74,15 +74,14 @@ public class UserEventHandler {
             userRepository.save(user);
         }
     }
+    public void handleBeforeCreate(User user) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-    @HandleAfterDelete
-    public void handleUserPostDelete(User user) {
-        logger.info("After deleting: {}", user.toString());
-    }
-
-    @HandleAfterLinkSave
-    public void handleUserPostLinkSave(User user, Object o) {
-        logger.info("After linking: {} to {}", user.toString(), o.toString());
+        // If the user is already authenticated and not anonymous, forbid registration
+        if (authentication != null && authentication.isAuthenticated() &&
+            !authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ANONYMOUS"))) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Already authenticated users cannot register a new account");
+        }
     }
 
     private void checkCanModify(User user) {
