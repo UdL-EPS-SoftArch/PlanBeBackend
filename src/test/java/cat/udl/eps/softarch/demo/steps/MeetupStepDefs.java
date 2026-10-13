@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.domain.Meetup;
+import cat.udl.eps.softarch.demo.domain.Location;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import io.cucumber.java.en.*;
@@ -164,6 +165,76 @@ public class MeetupStepDefs {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("organizer").roles("USER")));
+    }
+
+    @Given("the following meetups exist:")
+    public void the_following_meetups_exist(io.cucumber.datatable.DataTable dataTable) {
+        User organizer = userRepository.findById("organizer").orElseGet(() -> {
+            User u = new User();
+            u.setId("organizer");
+            u.setPassword(User.passwordEncoder.encode("password"));
+            u.setEmail("organizer@example.com");
+            return userRepository.save(u);
+        });
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "organizer", null, java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")))
+        );
+        try {
+            List<Map<String, String>> rows = dataTable.asMaps(String.class, String.class);
+            for (Map<String, String> row : rows) {
+                String organizerId = row.getOrDefault("organizer", "organizer");
+                User rowOrganizer = userRepository.findById(organizerId).orElseGet(() -> {
+                    User u = new User();
+                    u.setId(organizerId);
+                    u.setPassword(User.passwordEncoder.encode("password"));
+                    u.setEmail(organizerId + "@example.com");
+                    return userRepository.save(u);
+                });
+
+                Meetup meetup = new Meetup();
+                meetup.setTitle(row.get("title"));
+                meetup.setOrganizer(rowOrganizer);
+                meetup.setStartDate(row.containsKey("startDate") ? Instant.parse(row.get("startDate")) : Instant.now().plusSeconds(3600));
+                meetup.setEndDate(row.containsKey("endDate") ? Instant.parse(row.get("endDate")) : Instant.now().plusSeconds(7200));
+                meetup.setCapacity(10);
+                if (row.containsKey("category")) meetup.setCategory(cat.udl.eps.softarch.demo.domain.enums.Category.valueOf(row.get("category")));
+                if (row.containsKey("visibility")) meetup.setVisibility(MeetupVisibility.valueOf(row.get("visibility")));
+                if (row.containsKey("city")) {
+                    Location loc = new Location();
+                    loc.setCity(row.get("city"));
+                    meetup.setLocation(loc);
+                }
+                meetupRepository.save(meetup);
+            }
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+
+    @When("I search for meetups by category {string}")
+    public void i_search_for_meetups_by_category(String category) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/search/findByCategoryAndVisibility")
+                .param("category", category));
+    }
+
+    @When("I search for meetups by city {string}")
+    public void i_search_for_meetups_by_city(String city) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/search/findByCityAndVisibility")
+                .param("city", city));
+    }
+
+    @When("I search for meetups after {string}")
+    public void i_search_for_meetups_after(String date) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/search/findByStartDateAfterAndVisibility")
+                .param("startDate", date));
+    }
+
+    @When("I search for meetups by organizer {string}")
+    public void i_search_for_meetups_by_organizer(String organizer) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/search/findByOrganizerAndVisibility")
+                .param("organizerId", organizer));
     }
 
     @Then("the meetup {string} should have status {string}")
