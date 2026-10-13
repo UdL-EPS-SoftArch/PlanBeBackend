@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.Instant;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
 import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupVisibility;
 
 @Entity
 @Data
@@ -49,6 +50,9 @@ public class Meetup extends UriEntity<Long> {
 
     @Enumerated(EnumType.STRING)
     private MeetupStatus status = MeetupStatus.OPEN;
+
+    @Enumerated(EnumType.STRING)
+    private MeetupVisibility visibility = MeetupVisibility.PUBLIC;
 
     @CreatedDate
     private Instant created;

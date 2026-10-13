@@ -12,10 +12,10 @@ import java.util.Optional;
 @RepositoryRestResource
 public interface MeetupRepository extends JpaRepository<Meetup, Long> {
 
-    @Query("select m from Meetup m where m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true")
-    List<Meetup> findMyMeetups();
+    @Query("select m from Meetup m where m.visibility = 'PUBLIC' or m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true")
+    List<Meetup> findVisibleMeetups();
 
-    @Query("select m from Meetup m where m.id = ?#{#id} and (m.organizer.id = ?#{#username} or ?#{hasRole('ADMIN')} = true)")
+    @Query("select m from Meetup m where m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true")
     Optional<Meetup> findByIdAndOwner(Long id, String username);
 
     @Override

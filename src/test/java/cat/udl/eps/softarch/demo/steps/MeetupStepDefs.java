@@ -12,6 +12,7 @@ import org.springframework.web.context.WebApplicationContext;
 import java.util.*;
 import java.time.Instant;
 import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupVisibility;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -207,6 +208,87 @@ public class MeetupStepDefs {
         } finally {
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
         }
+    }
+
+    @Given("a meetup {string} exists with visibility {string}")
+    public void a_meetup_exists_with_visibility(String title, String visibility) {
+        User organizer = userRepository.findById("organizer").orElseGet(() -> {
+            User u = new User();
+            u.setId("organizer");
+            u.setPassword(User.passwordEncoder.encode("password"));
+            u.setEmail("organizer@example.com");
+            return userRepository.save(u);
+        });
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                "organizer", null, java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")))
+        );
+        try {
+            Meetup meetup = new Meetup();
+            meetup.setTitle(title);
+            meetup.setOrganizer(organizer);
+            meetup.setStartDate(Instant.now().plusSeconds(3600));
+            meetup.setEndDate(Instant.now().plusSeconds(7200));
+            meetup.setCapacity(10);
+            meetup.setVisibility(MeetupVisibility.valueOf(visibility));
+            meetupRepository.save(meetup);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Given("a meetup {string} exists created by {string} with visibility {string}")
+    public void a_meetup_exists_created_by_with_visibility(String title, String username, String visibility) {
+        User organizer = userRepository.findById(username).orElseGet(() -> {
+            User u = new User();
+            u.setId(username);
+            u.setPassword(User.passwordEncoder.encode("password"));
+            u.setEmail(username + "@example.com");
+            return userRepository.save(u);
+        });
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+            new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                username, null, java.util.Collections.singletonList(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER")))
+        );
+        try {
+            Meetup meetup = new Meetup();
+            meetup.setTitle(title);
+            meetup.setOrganizer(organizer);
+            meetup.setStartDate(Instant.now().plusSeconds(3600));
+            meetup.setEndDate(Instant.now().plusSeconds(7200));
+            meetup.setCapacity(10);
+            meetup.setVisibility(MeetupVisibility.valueOf(visibility));
+            meetupRepository.save(meetup);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+
+    @When("I list meetups")
+    public void i_list_meetups() throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/search/findVisibleMeetups"));
+    }
+
+    @Then("I should see {string}")
+    public void i_should_see(String title) throws Throwable {
+        stepDefs.result.andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].title").exists());
+    }
+
+    @Then("I should not see {string}")
+    public void i_should_not_see(String title) throws Throwable {
+        stepDefs.result.andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')]", org.hamcrest.Matchers.empty()));
+    }
+
+    @When("I try to retrieve the meetup {string}")
+    public void i_try_to_retrieve_the_meetup(String title) throws Throwable {
+        Meetup meetup = meetupRepository.findAll().stream()
+                .filter(m -> m.getTitle().equals(title))
+                .findFirst().orElseThrow();
+
+        stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/" + meetup.getId())
+                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(stepDefs.currentUser).roles("USER")));
     }
 
     @When("I update the meetup {string} status to {string}")
