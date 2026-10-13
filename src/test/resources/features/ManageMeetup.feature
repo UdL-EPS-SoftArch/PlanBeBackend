@@ -42,6 +42,14 @@ Feature: Manage Meetups
       | startDate   | 2020-01-01T10:00:00Z |
     Then The response code is 400
 
+  Scenario: Cannot create a meetup with end date before start date
+    Given I login as "organizer" with password "password"
+    When I create a new meetup with the following details:
+      | title       | Invalid Dates |
+      | startDate   | 2026-11-01T10:00:00Z |
+      | endDate     | 2026-11-01T08:00:00Z |
+    Then The response code is 400
+
   Scenario: Organizer can edit their own meetup
     Given I login as "organizer" with password "password"
     And a meetup "Original Title" exists organized by "organizer"

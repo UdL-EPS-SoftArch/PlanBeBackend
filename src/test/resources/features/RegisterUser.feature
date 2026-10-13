@@ -22,7 +22,7 @@ Feature: Register User
     Given There is a registered user with username "registered" and password "password" and email "registered@sample.app"
     And I login as "registered" with password "password"
     When I register a new user with username "user", email "user@sample.app" and password "password"
-    Then The response code is 401
+    Then The response code is 403
     And It has not been created a user with username "user"
 
   Scenario: Register user with empty password
