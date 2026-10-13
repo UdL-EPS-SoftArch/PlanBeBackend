@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
 import org.springframework.data.rest.core.annotation.HandleAfterDelete;
 import org.springframework.data.rest.core.annotation.HandleAfterLinkSave;
+import org.springframework.data.rest.core.annotation.HandleBeforeLinkDelete;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
@@ -38,12 +39,7 @@ public class UserEventHandler {
     @HandleBeforeSave
     public void handleUserPreSave(User user) {
         logger.info("Before updating: {}", user.toString());
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        boolean isAdmin = authentication.getAuthorities().stream()
-            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-        if (!isAdmin && !authentication.getName().equals(user.getId())) {
-            throw new AccessDeniedException("Only the user can modify their own account");
-        }
+        checkCanModify(user);
     }
 
     @HandleBeforeDelete
@@ -54,6 +50,13 @@ public class UserEventHandler {
     @HandleBeforeLinkSave
     public void handleUserPreLinkSave(User user, Object o) {
         logger.info("Before linking: {} to {}", user.toString(), o.toString());
+        checkCanModify(user);
+    }
+
+    @HandleBeforeLinkDelete
+    public void handleUserPreLinkDelete(User user, Object o) {
+        logger.info("Before unlinking: {} from {}", user.toString(), o.toString());
+        checkCanModify(user);
     }
 
     @HandleAfterCreate
@@ -80,5 +83,14 @@ public class UserEventHandler {
     @HandleAfterLinkSave
     public void handleUserPostLinkSave(User user, Object o) {
         logger.info("After linking: {} to {}", user.toString(), o.toString());
+    }
+
+    private void checkCanModify(User user) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        boolean isAdmin = authentication.getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+        if (!isAdmin && !authentication.getName().equals(user.getId())) {
+            throw new AccessDeniedException("Only the user can modify their own account");
+        }
     }
 }
