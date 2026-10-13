@@ -19,7 +19,8 @@ Feature: Register User
     And I cannot login with username "user" and password "newpassword"
 
   Scenario: Register user when already authenticated
-    Given I login as "demo" with password "password"
+    Given There is a registered user with username "registered" and password "password" and email "registered@sample.app"
+    And I login as "registered" with password "password"
     When I register a new user with username "user", email "user@sample.app" and password "password"
     Then The response code is 403
     And It has not been created a user with username "user"
