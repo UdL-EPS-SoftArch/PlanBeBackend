@@ -5,9 +5,12 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 
 import io.cucumber.java.Before;
 import io.cucumber.java.en.Given;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 public class AuthenticationStepDefs {
+    @Autowired
+    private StepDefs stepDefs;
 
     public static String currentUsername;
     public static String currentPassword;
@@ -27,6 +30,14 @@ public class AuthenticationStepDefs {
     public void iLoginAsWithPassword(String username, String password) {
         AuthenticationStepDefs.currentUsername = username;
         AuthenticationStepDefs.currentPassword = password;
+        stepDefs.currentUser = username;
+    }
+
+    @Given("^I'm logged in as \"([^\"]*)\"$")
+    public void iMLoggedInAs(String username) {
+        AuthenticationStepDefs.currentUsername = username;
+        AuthenticationStepDefs.currentPassword = "password";
+        stepDefs.currentUser = username;
     }
 
     @Given("^I'm not logged in$")

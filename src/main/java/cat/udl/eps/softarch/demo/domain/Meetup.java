@@ -9,6 +9,8 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.Instant;
+import cat.udl.eps.softarch.demo.domain.enums.Category;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 
 @Entity
 @Data
@@ -41,6 +43,12 @@ public class Meetup extends UriEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "organizer_id")
     private User organizer;
+
+    @Enumerated(EnumType.STRING)
+    private Category category;
+
+    @Enumerated(EnumType.STRING)
+    private MeetupStatus status = MeetupStatus.OPEN;
 
     @CreatedDate
     private Instant created;
