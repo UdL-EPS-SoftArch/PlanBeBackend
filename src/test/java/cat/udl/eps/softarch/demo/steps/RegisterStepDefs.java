@@ -101,10 +101,7 @@ public class RegisterStepDefs {
 
   @And("^It has not been created a user with username \"([^\"]*)\"$")
   public void itHasNotBeenCreatedAUserWithUsername(String username) throws Throwable {
-    stepDefs.result = stepDefs.mockMvc.perform(
-            get("/users/{username}", username)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .with(AuthenticationStepDefs.authenticate()))
-            .andExpect(status().isNotFound());
+    // Using userRepository directly to avoid 401/404 confusion via MockMvc
+    assertFalse(userRepository.existsById(username), "User \"" + username + "\" should not exist");
   }
 }

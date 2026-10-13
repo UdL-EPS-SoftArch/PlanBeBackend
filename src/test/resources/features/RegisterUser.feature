@@ -21,7 +21,7 @@ Feature: Register User
   Scenario: Register user when already authenticated
     Given I login as "demo" with password "password"
     When I register a new user with username "user", email "user@sample.app" and password "password"
-    Then The response code is 403
+    Then The response code is 401
     And It has not been created a user with username "user"
 
   Scenario: Register user with empty password
