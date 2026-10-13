@@ -31,6 +31,9 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/users").authenticated()
                 .requestMatchers(HttpMethod.POST, "/users").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/*").denyAll()
+                .requestMatchers("/users/*/*").authenticated()              // Profile associations (e.g. interests)
+                .requestMatchers(HttpMethod.GET, "/interests", "/interests/**").permitAll()
+                .requestMatchers("/interests", "/interests/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/records").permitAll()    // Allow listing public records
                 .requestMatchers(HttpMethod.GET, "/records/*").permitAll()  // Allow retrieving public records
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
