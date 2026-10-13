@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.repository;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.domain.Meetup;
+import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -30,4 +31,6 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     Iterable<Participation> findMyParticipations();
 
     long countByMeetupId(Long meetupId);
+
+    long countByMeetupIdAndStatus(Long meetupId, ParticipationStatus status);
 }

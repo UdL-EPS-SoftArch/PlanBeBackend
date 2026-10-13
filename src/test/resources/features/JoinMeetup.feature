@@ -15,12 +15,17 @@ Feature: Join and Leave a Public Meetup
     Then the response code is 201
     And the participation status is "CONFIRMED"
 
-  Scenario: User joins full public meetup (Waiting List)
+  Scenario: User cannot join full public meetup
     Given I am logged in as "user1"
     And the meetup "Full Event" is already full
     When I join the meetup "Full Event"
+    Then the response code is 409
+
+  Scenario: Last spot makes meetup FULL
+    Given I am logged in as "user1"
+    When I join the meetup "Full Event"
     Then the response code is 201
-    And the participation status is "WAITING"
+    And the meetup "Full Event" status is "FULL"
 
   Scenario: User cannot join twice
     Given I am logged in as "user1"
@@ -34,6 +39,14 @@ Feature: Join and Leave a Public Meetup
     When I leave the meetup "Padel Match"
     Then the response code is 200
     And the participation status is "CANCELLED"
+
+  Scenario: Someone leaves a full meetup and it becomes OPEN again
+    Given I am logged in as "user1"
+    And the meetup "Full Event" is already full
+    And I have joined the meetup "Full Event"
+    When I leave the meetup "Full Event"
+    Then the response code is 200
+    And the meetup "Full Event" status is "OPEN"
 
   Scenario: Cannot join private meetup without invitation
     Given I am logged in as "user1"

@@ -91,6 +91,9 @@ public class JoinMeetupStepDefs {
             p.setJoinedAt(java.time.Instant.now());
             participationRepository.save(p);
         }
+        // Ensure the meetup status is set to FULL
+        meetup.setStatus(Meetup.MeetupStatus.FULL);
+        meetupRepository.save(meetup);
     }
 
     @Given("I have already joined the meetup {string}")
@@ -165,7 +168,6 @@ public class JoinMeetupStepDefs {
         // We verify the status directly in the database to be independent of the HTTP response body
         // We assume "user1" is the participant for these tests
         // We need to find the participation for user1 in any meetup (or the last one created)
-        // For the sake of these tests, we'll look for the first active participation of user1
         Participation p = participationRepository.findAll().stream()
             .filter(participation -> participation.getParticipant().getId().equals("user1"))
             .findFirst()
@@ -173,6 +175,14 @@ public class JoinMeetupStepDefs {
 
         if (!p.getStatus().name().equals(status)) {
             throw new AssertionError("Expected status " + status + " but was " + p.getStatus().name());
+        }
+    }
+
+    @Then("the meetup {string} status is {string}")
+    public void theMeetupStatusIs(String title, String status) {
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        if (!meetup.getStatus().name().equals(status)) {
+            throw new AssertionError("Expected meetup status " + status + " but was " + meetup.getStatus().name());
         }
     }
 }
