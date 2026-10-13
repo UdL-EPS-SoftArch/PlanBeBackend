@@ -50,7 +50,12 @@ public class MeetupStepDefs {
         if (details.containsKey("description")) body.put("description", details.get("description"));
         if (details.containsKey("capacity")) body.put("capacity", Integer.parseInt(details.get("capacity")));
         if (details.containsKey("startDate")) body.put("startDate", details.get("startDate"));
+        else body.put("startDate", Instant.now().plusSeconds(3600).toString());
         if (details.containsKey("endDate")) body.put("endDate", details.get("endDate"));
+        else body.put("endDate", Instant.now().plusSeconds(7200).toString());
+        if (details.containsKey("minAge")) body.put("minAge", Integer.parseInt(details.get("minAge")));
+        if (details.containsKey("maxAge")) body.put("maxAge", Integer.parseInt(details.get("maxAge")));
+        if (details.containsKey("targetGender")) body.put("targetGender", details.get("targetGender"));
         
         if (details.containsKey("locName") || details.containsKey("locAddress") || details.containsKey("locCity") || details.containsKey("locLat") || details.containsKey("locLon")) {
             Map<String, Object> location = new HashMap<>();
@@ -241,6 +246,14 @@ public class MeetupStepDefs {
     public void the_meetup_should_have_status(String title, String status) throws Throwable {
         stepDefs.mockMvc.perform(get("/meetups"))
                 .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].status").value(status));
+    }
+
+    @Then("the meetup {string} has minAge {int} and maxAge {int} and targetGender {string}")
+    public void the_meetup_has_age_range_and_gender(String title, Integer minAge, Integer maxAge, String gender) throws Throwable {
+        stepDefs.mockMvc.perform(get("/meetups"))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].minAge").value(minAge))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].maxAge").value(maxAge))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].targetGender").value(gender));
     }
 
     @Given("a meetup {string} exists")

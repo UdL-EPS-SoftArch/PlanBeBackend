@@ -54,6 +54,12 @@ public class Meetup extends UriEntity<Long> {
     @Enumerated(EnumType.STRING)
     private MeetupVisibility visibility = MeetupVisibility.PUBLIC;
 
+    private Integer minAge;
+    private Integer maxAge;
+
+    @Enumerated(EnumType.STRING)
+    private Gender targetGender;
+
     @CreatedDate
     private Instant created;
 
@@ -64,5 +70,11 @@ public class Meetup extends UriEntity<Long> {
     public boolean isEndDateAfterStartDate() {
         if (startDate == null || endDate == null) return true;
         return endDate.isAfter(startDate);
+    }
+
+    @AssertTrue(message = "minAge must be less than or equal to maxAge")
+    public boolean isAgeRangeValid() {
+        if (minAge == null || maxAge == null) return true;
+        return minAge <= maxAge;
     }
 }

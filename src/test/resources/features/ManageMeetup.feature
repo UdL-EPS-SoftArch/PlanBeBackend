@@ -96,3 +96,21 @@ Feature: Manage Meetups
     When I update the meetup "User Event" with title "Admin Modified Title"
     Then The response code is 204
     And the meetup "User Event" now has title "Admin Modified Title"
+
+  Scenario: Create meetup with age range and gender target
+    Given I login as "organizer" with password "password"
+    When I create a new meetup with the following details:
+      | title       | Age Restricted Event |
+      | minAge      | 18                  |
+      | maxAge      | 30                  |
+      | targetGender| MALE               |
+    Then The response code is 201
+    And the meetup "Age Restricted Event" has minAge 18 and maxAge 30 and targetGender "MALE"
+
+  Scenario: Cannot create a meetup with minAge greater than maxAge
+    Given I login as "organizer" with password "password"
+    When I create a new meetup with the following details:
+      | title       | Invalid Age Range |
+      | minAge      | 30                  |
+      | maxAge      | 18                  |
+    Then The response code is 400
