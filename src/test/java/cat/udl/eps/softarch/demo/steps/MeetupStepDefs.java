@@ -48,6 +48,16 @@ public class MeetupStepDefs {
         if (details.containsKey("capacity")) body.put("capacity", Integer.parseInt(details.get("capacity")));
         if (details.containsKey("startDate")) body.put("startDate", details.get("startDate"));
         if (details.containsKey("endDate")) body.put("endDate", details.get("endDate"));
+        
+        if (details.containsKey("locName") || details.containsKey("locAddress") || details.containsKey("locCity") || details.containsKey("locLat") || details.containsKey("locLon")) {
+            Map<String, Object> location = new HashMap<>();
+            if (details.containsKey("locName")) location.put("name", details.get("locName"));
+            if (details.containsKey("locAddress")) location.put("address", details.get("locAddress"));
+            if (details.containsKey("locCity")) location.put("city", details.get("locCity"));
+            if (details.containsKey("locLat")) location.put("latitude", Double.parseDouble(details.get("locLat")));
+            if (details.containsKey("locLon")) location.put("longitude", Double.parseDouble(details.get("locLon")));
+            body.put("location", location);
+        }
 
         stepDefs.result = stepDefs.mockMvc.perform(post("/meetups")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -116,5 +126,12 @@ public class MeetupStepDefs {
     public void the_meetup_no_longer_exists(String title) throws Throwable {
         stepDefs.mockMvc.perform(get("/meetups"))
                 .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')]", org.hamcrest.Matchers.empty()));
+    }
+
+    @Then("the meetup {string} has location {string} in {string}")
+    public void the_meetup_has_location_in(String title, String locationName, String city) throws Throwable {
+        stepDefs.mockMvc.perform(get("/meetups"))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].location.name").value(locationName))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].location.city").value(city));
     }
 }

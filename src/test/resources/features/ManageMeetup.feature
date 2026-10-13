@@ -18,8 +18,14 @@ Feature: Manage Meetups
       | capacity    | 4           |
       | startDate   | 2026-11-01T10:00:00Z |
       | endDate     | 2026-11-01T12:00:00Z |
+      | locName     | Club Padel |
+      | locAddress  | Street 1 |
+      | locCity     | City A |
+      | locLat      | 41.3851 |
+      | locLon      | 2.1734 |
     Then The response code is 201
     And The meetup "Pàdel Match" is organized by "organizer"
+    And the meetup "Pàdel Match" has location "Club Padel" in "City A"
 
   Scenario: Cannot create a meetup with empty title
     Given I login as "organizer" with password "password"
@@ -33,6 +39,14 @@ Feature: Manage Meetups
     When I create a new meetup with the following details:
       | title       | Invalid Capacity |
       | capacity    | 0               |
+    Then The response code is 400
+
+  Scenario: Cannot create a meetup with invalid latitude
+    Given I login as "organizer" with password "password"
+    When I create a new meetup with the following details:
+      | title       | Invalid Lat |
+      | capacity    | 4             |
+      | locLat      | 91.0 |
     Then The response code is 400
 
   Scenario: Cannot create a meetup starting in the past
