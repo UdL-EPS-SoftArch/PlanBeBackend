@@ -13,7 +13,10 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.util.Optional;
 import java.util.stream.StreamSupport;
+import java.util.Comparator;
+
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -101,5 +104,39 @@ public class JoinMeetupStepDefs {
     public void the_meetup_status_should_be(String status) {
         Meetup updatedMeetup = meetupRepository.findById(currentMeetup.getId()).orElseThrow();
         assertEquals(Meetup.MeetupStatus.valueOf(status), updatedMeetup.getStatus());
+    }
+
+    @Then("my participation status should be {string}")
+    public void my_participation_status_should_be(String status) {
+        Participation p = StreamSupport.stream(participationRepository.findAll().spliterator(), false)
+                .filter(p1 -> p1.getUser() != null && p1.getUser().getId().equals("me"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(Participation.ParticipationStatus.valueOf(status), p.getStatus());
+    }
+
+    @Given("another user is on the waiting list")
+    public void another_user_is_on_the_waiting_list() throws Exception {
+        User user = new User();
+        String username = "waitlisted";
+        user.setId(username);
+        user.setEmail(username + "@test.com");
+        user.setPassword("password");
+        userRepository.save(user);
+
+        Participation p = new Participation();
+        p.setUser(user);
+        p.setMeetup(currentMeetup);
+        p.setStatus(Participation.ParticipationStatus.WAITING);
+        participationRepository.save(p);
+    }
+
+    @Then("the waiting user status should be {string}")
+    public void the_waiting_user_status_should_be(String status) {
+        Participation p = StreamSupport.stream(participationRepository.findAll().spliterator(), false)
+                .filter(p1 -> p1.getUser() != null && p1.getUser().getId().equals("waitlisted"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(Participation.ParticipationStatus.valueOf(status), p.getStatus());
     }
 }

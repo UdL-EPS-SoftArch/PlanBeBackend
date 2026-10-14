@@ -8,11 +8,12 @@ Feature: Join Meetup
     Then the response code is 201
     And the meetup status should be "FULL"
 
-  Scenario: Join full meetup returns conflict
+  Scenario: Join full meetup puts user on waiting list
     Given a meetup exists with capacity 2
     And 2 users have already joined the meetup
     When I join the meetup
-    Then the response code is 409
+    Then the response code is 201
+
 
   Scenario: Someone leaves full meetup opens it
     Given a meetup exists with capacity 2

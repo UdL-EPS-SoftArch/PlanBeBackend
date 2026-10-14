@@ -30,9 +30,8 @@ public class ParticipationEventHandler {
         Meetup meetup = participation.getMeetup();
         if (meetup == null) return;
 
-        if (meetup.getStatus() == Meetup.MeetupStatus.FULL ||
-            countConfirmed(meetup.getId()) >= meetup.getCapacity()) {
-            throw new MeetupFullException("The meetup is full");
+        if (countConfirmed(meetup.getId()) >= meetup.getCapacity()) {
+            participation.setStatus(Participation.ParticipationStatus.WAITING);
         }
     }
 
@@ -55,6 +54,25 @@ public class ParticipationEventHandler {
         Meetup meetup = participation.getMeetup();
         if (meetup == null) return;
 
+        if (participation.getStatus() == Participation.ParticipationStatus.CONFIRMED) {
+            Participation nextInLine = StreamSupport.stream(participationRepository.findAll().spliterator(), false)
+                    .filter(p -> p.getMeetup() != null && p.getMeetup().getId().equals(meetup.getId()))
+                    .filter(p -> p.getStatus() == Participation.ParticipationStatus.WAITING)
+                    .sorted((p1, p2) -> p1.getId().compareTo(p2.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (nextInLine != null) {
+                nextInLine.setStatus(Participation.ParticipationStatus.CONFIRMED);
+                participationRepository.save(nextInLine);
+
+                // Ensure the meetup status is kept as FULL because the spot was immediately filled
+                meetup.setStatus(Meetup.MeetupStatus.FULL);
+                meetupRepository.save(meetup);
+                return;
+            }
+        }
+
         long count = countConfirmed(meetup.getId());
         if (count < meetup.getCapacity()) {
             meetup.setStatus(Meetup.MeetupStatus.OPEN);
@@ -65,6 +83,7 @@ public class ParticipationEventHandler {
     private long countConfirmed(Long meetupId) {
         return StreamSupport.stream(participationRepository.findAll().spliterator(), false)
                 .filter(p -> p.getMeetup() != null && p.getMeetup().getId().equals(meetupId))
+                .filter(p -> p.getStatus() == Participation.ParticipationStatus.CONFIRMED)
                 .count();
     }
 }

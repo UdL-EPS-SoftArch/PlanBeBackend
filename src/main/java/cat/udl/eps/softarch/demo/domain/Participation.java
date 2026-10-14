@@ -24,6 +24,6 @@ public class Participation extends UriEntity<Long> {
     private ParticipationStatus status = ParticipationStatus.CONFIRMED;
 
     public enum ParticipationStatus {
-        CONFIRMED
+        CONFIRMED, WAITING
     }
 }
