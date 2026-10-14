@@ -1,0 +1,22 @@
+package cat.udl.eps.softarch.demo.domain;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.hibernate.validator.constraints.Length;
+
+@Entity
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class Interest extends UriEntity<Long> {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @NotBlank
+    @Length(max = 50)
+    @Column(unique = true)
+    private String name;
+}

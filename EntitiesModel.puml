@@ -4,6 +4,27 @@ class User extends UriEntity implements UserDetails {
   username : String
   password : String
   email : String
+  displayName : String
+  bio : String
+  avatarUrl : String
+  city : String
+  birthDate : LocalDate
+  gender : Gender
+  showPersonalData : boolean
+  admin : boolean
+  getAge() : Integer
+}
+
+class Interest extends UriEntity {
+  id : Long
+  name : String
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  NON_BINARY
+  UNDISCLOSED
 }
 
 class UriEntity {
@@ -11,5 +32,6 @@ class UriEntity {
 }
 
 User "1" --right-- "*" Resource : owner <
+User "*" --> "*" Interest : interests
 
 @enduml
