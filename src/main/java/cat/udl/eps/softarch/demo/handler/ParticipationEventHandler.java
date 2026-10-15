@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Participation;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.exception.MeetupFullException;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
@@ -43,8 +44,7 @@ public class ParticipationEventHandler {
 
         long count = countConfirmed(meetup.getId());
         if (count >= meetup.getCapacity()) {
-            meetup.setStatus(Meetup.MeetupStatus.FULL);
-            meetupRepository.save(meetup);
+            meetupRepository.updateStatus(meetup.getId(), MeetupStatus.FULL);
         }
     }
 
@@ -67,16 +67,14 @@ public class ParticipationEventHandler {
                 participationRepository.save(nextInLine);
 
                 // Ensure the meetup status is kept as FULL because the spot was immediately filled
-                meetup.setStatus(Meetup.MeetupStatus.FULL);
-                meetupRepository.save(meetup);
+                meetupRepository.updateStatus(meetup.getId(), MeetupStatus.FULL);
                 return;
             }
         }
 
         long count = countConfirmed(meetup.getId());
         if (count < meetup.getCapacity()) {
-            meetup.setStatus(Meetup.MeetupStatus.OPEN);
-            meetupRepository.save(meetup);
+            meetupRepository.updateStatus(meetup.getId(), MeetupStatus.OPEN);
         }
     }
 

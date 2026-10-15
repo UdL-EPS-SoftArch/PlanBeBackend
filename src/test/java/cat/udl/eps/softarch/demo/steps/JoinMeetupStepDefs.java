@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.steps;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -40,10 +41,18 @@ public class JoinMeetupStepDefs {
 
     @Given("a meetup exists with capacity {int}")
     public void a_meetup_exists_with_capacity(Integer capacity) throws Exception {
-        Meetup meetup = new Meetup();
-        meetup.setTitle("Test Meetup");
-        meetup.setCapacity(capacity);
-        currentMeetup = meetupRepository.save(meetup);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        "organizer", null, java.util.Collections.singletonList(
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"))));
+        try {
+            Meetup meetup = new Meetup();
+            meetup.setTitle("Test Meetup");
+            meetup.setCapacity(capacity);
+            currentMeetup = meetupRepository.save(meetup);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
     }
 
     @Given("{int} user(s) have already joined the meetup")
@@ -95,15 +104,12 @@ public class JoinMeetupStepDefs {
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(p.getUser().getId())));
     }
 
-    @Then("the response code is {int}")
-    public void the_response_code_is(Integer code) throws Throwable {
-        stepDefs.theResponseCodeIs(code);
-    }
-
     @Then("the meetup status should be {string}")
     public void the_meetup_status_should_be(String status) {
-        Meetup updatedMeetup = meetupRepository.findById(currentMeetup.getId()).orElseThrow();
-        assertEquals(Meetup.MeetupStatus.valueOf(status), updatedMeetup.getStatus());
+        Meetup updatedMeetup = meetupRepository.findAll().stream()
+                .filter(m -> m.getId().equals(currentMeetup.getId()))
+                .findFirst().orElseThrow();
+        assertEquals(MeetupStatus.valueOf(status), updatedMeetup.getStatus());
     }
 
     @Then("my participation status should be {string}")

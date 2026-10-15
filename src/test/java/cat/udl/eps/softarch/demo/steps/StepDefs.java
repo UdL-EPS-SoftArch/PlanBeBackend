@@ -39,6 +39,7 @@ public class StepDefs {
     protected final WebApplicationContext wac;
     protected MockMvc mockMvc;
     protected ResultActions result;
+    protected String currentUser;
     protected ObjectMapper mapper = new ObjectMapper();
 
     public StepDefs(WebApplicationContext wac) {
@@ -54,6 +55,7 @@ public class StepDefs {
     }
 
     @Then("^The response code is (\\d+)$")
+    @Then("the response code is {int}")
     public void theResponseCodeIs(int code) throws Throwable {
         result.andExpect(status().is(code));
     }

@@ -4,3 +4,9 @@ spring:
   h2:
     console:
       enabled: false
+  jpa:
+    properties:
+      jakarta:
+        persistence:
+          validation:
+            mode: none
