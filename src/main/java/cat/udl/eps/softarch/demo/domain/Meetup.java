@@ -3,26 +3,43 @@ package cat.udl.eps.softarch.demo.domain;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
-import java.util.Set;
+import java.time.Instant;
 
+@Entity
+@Table(name = "Meetup")
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Entity
 public class Meetup extends UriEntity<Long> {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String title;
+
+    private String description;
+
+    @Column(nullable = false)
     private Integer capacity;
 
     @Enumerated(EnumType.STRING)
-    private MeetupStatus status = MeetupStatus.OPEN;
+    @Column(nullable = false)
+    private Visibility visibility;
 
-    @OneToMany(mappedBy = "meetup", cascade = CascadeType.ALL)
-    private Set<Participation> participations;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MeetupStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "organizer_id")
+    private User organizer;
+
+    public enum Visibility {
+        PUBLIC, PRIVATE, GROUP
+    }
 
     public enum MeetupStatus {
-        OPEN, FULL
+        DRAFT, OPEN, FULL, CANCELLED, FINISHED
     }
 }
