@@ -114,3 +114,18 @@ Feature: Manage Meetups
       | minAge      | 30                  |
       | maxAge      | 18                  |
     Then The response code is 400
+
+  Scenario: Create meetup with a price
+    Given I login as "organizer" with password "password"
+    When I create a new meetup with the following details:
+      | title       | Paid Event |
+      | price       | 19.99      |
+    Then The response code is 201
+    And the meetup "Paid Event" has price 19.99
+
+  Scenario: Cannot create a meetup with a negative price
+    Given I login as "organizer" with password "password"
+    When I create a new meetup with the following details:
+      | title       | Invalid Price |
+      | price       | -5.0          |
+    Then The response code is 400

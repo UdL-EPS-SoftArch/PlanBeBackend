@@ -9,6 +9,7 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
 import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
@@ -61,6 +62,9 @@ public class Meetup extends UriEntity<Long> {
 
     @Enumerated(EnumType.STRING)
     private Gender targetGender;
+
+    @DecimalMin("0.0")
+    private BigDecimal price;
 
     @CreatedDate
     private Instant created;

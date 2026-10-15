@@ -56,6 +56,7 @@ public class MeetupStepDefs {
         if (details.containsKey("minAge")) body.put("minAge", Integer.parseInt(details.get("minAge")));
         if (details.containsKey("maxAge")) body.put("maxAge", Integer.parseInt(details.get("maxAge")));
         if (details.containsKey("targetGender")) body.put("targetGender", details.get("targetGender"));
+        if (details.containsKey("price")) body.put("price", new java.math.BigDecimal(details.get("price")));
         
         if (details.containsKey("locName") || details.containsKey("locAddress") || details.containsKey("locCity") || details.containsKey("locLat") || details.containsKey("locLon")) {
             Map<String, Object> location = new HashMap<>();
@@ -254,6 +255,12 @@ public class MeetupStepDefs {
                 .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].minAge").value(minAge))
                 .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].maxAge").value(maxAge))
                 .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].targetGender").value(gender));
+    }
+
+    @Then("the meetup {string} has price {double}")
+    public void the_meetup_has_price(String title, Double price) throws Throwable {
+        stepDefs.mockMvc.perform(get("/meetups"))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')].price").value(price));
     }
 
     @Given("a meetup {string} exists")
