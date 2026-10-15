@@ -10,4 +10,10 @@ import java.util.Optional;
 @Repository
 public interface MeetupRepository extends JpaRepository<Meetup, Long> {
     Optional<Meetup> findByTitle(String title);
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+
+@RepositoryRestResource
+public interface MeetupRepository extends CrudRepository<Meetup, Long>, PagingAndSortingRepository<Meetup, Long> {
 }
