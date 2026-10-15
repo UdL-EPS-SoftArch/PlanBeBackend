@@ -43,7 +43,7 @@ public class MeetupEventHandler {
 
         if (!isAdmin) {
             if (meetup.getOrganizer() == null || !meetup.getOrganizer().getId().equals(username)) {
-                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
             }
         }
     }
@@ -59,7 +59,7 @@ public class MeetupEventHandler {
 
         if (!isAdmin) {
             if (meetup.getOrganizer() == null || !meetup.getOrganizer().getId().equals(username)) {
-                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.NOT_FOUND);
+                throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.FORBIDDEN);
             }
         }
     }

@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.security;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupVisibility;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -16,17 +17,18 @@ public class MeetupSecurity {
         this.meetupRepository = meetupRepository;
     }
 
-    public boolean isOwner(Long id) {
+    public boolean canRead(Long id) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) return false;
-        
-        String username = authentication.getName();
-        boolean isAdmin = authentication.getAuthorities().stream()
+        String username = (authentication != null) ? authentication.getName() : null;
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
-        
-        if (isAdmin) return true;
 
-        return meetupRepository.findByIdAndOwner(id, username).isPresent();
+        if (isAdmin) return true;
+        if (username != null && meetupRepository.findByIdAndOwner(id, username).isPresent()) return true;
+
+        return meetupRepository.findByIdRaw(id)
+                .map(meetup -> meetup.getVisibility() == MeetupVisibility.PUBLIC)
+                .orElse(false);
     }
 
     public boolean canSave(Meetup meetup) {
