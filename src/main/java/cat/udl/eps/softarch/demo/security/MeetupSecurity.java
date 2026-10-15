@@ -28,4 +28,19 @@ public class MeetupSecurity {
 
         return meetupRepository.findByIdAndOwner(id, username).isPresent();
     }
+
+    public boolean canSave(Meetup meetup) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) return false;
+
+        if (authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+            return true;
+        }
+
+        if (meetup.getId() == null) return true;
+
+        return meetup.getOrganizer() != null
+                && meetup.getOrganizer().getId().equals(authentication.getName());
+    }
 }

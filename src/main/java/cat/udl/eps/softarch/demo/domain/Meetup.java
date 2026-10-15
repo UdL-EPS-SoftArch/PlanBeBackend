@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -38,6 +39,7 @@ public class Meetup extends UriEntity<Long> {
     @Min(1)
     private Integer capacity;
 
+    @Valid
     @Embedded
     private Location location;
 

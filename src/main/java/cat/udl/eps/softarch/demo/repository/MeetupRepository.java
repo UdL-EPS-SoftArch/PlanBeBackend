@@ -36,7 +36,7 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
 
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or #entity.organizer.id == authentication.name")
+    @PreAuthorize("@meetupSecurity.canSave(#entity)")
     <S extends Meetup> S save(S entity);
 
     @Override
