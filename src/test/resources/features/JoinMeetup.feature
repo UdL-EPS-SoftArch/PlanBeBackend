@@ -39,3 +39,16 @@ Feature: Join and Leave a Public Meetup
     Given I am logged in as "user1"
     When I join the meetup "Secret Club"
     Then the response code is 403
+
+  Scenario: Cancel meetup → participations CANCELLED
+    Given I am logged in as "user1"
+    And I have joined the meetup "Padel Match"
+    When the organizer cancels the meetup "Padel Match"
+    Then the response code is 200
+    And the participation status is "CANCELLED"
+
+  Scenario: Cannot join a CANCELLED meetup
+    Given I am logged in as "user1"
+    And the meetup "Padel Match" is cancelled
+    When I join the meetup "Padel Match"
+    Then the response code is 409
