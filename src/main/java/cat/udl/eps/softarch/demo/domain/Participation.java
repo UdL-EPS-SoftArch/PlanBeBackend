@@ -19,24 +19,14 @@ public class Participation extends UriEntity<Long> {
     @JoinColumn(name = "participant_id")
     private User participant;
 
-    @ManyToOne(optional = false)
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
-
     @ManyToOne
     @JoinColumn(name = "meetup_id")
     private Meetup meetup;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ParticipationStatus status;
+    private ParticipationStatus status = ParticipationStatus.CONFIRMED;
 
     @Column(nullable = false)
     private Instant joinedAt;
-    private ParticipationStatus status = ParticipationStatus.CONFIRMED;
-
-    public enum ParticipationStatus {
-        CONFIRMED, WAITING
-    }
 }
