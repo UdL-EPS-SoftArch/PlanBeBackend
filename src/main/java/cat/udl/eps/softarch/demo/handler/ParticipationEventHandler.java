@@ -51,6 +51,25 @@ public class ParticipationEventHandler {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot join private meetup without invitation");
         }
 
+        // Check age and gender restrictions
+        if (meetup.getMinAge() != null) {
+            Integer age = user.getAge();
+            if (age == null || age < meetup.getMinAge()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not meet age requirements");
+            }
+        }
+        if (meetup.getMaxAge() != null) {
+            Integer age = user.getAge();
+            if (age == null || age > meetup.getMaxAge()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not meet age requirements");
+            }
+        }
+        if (meetup.getTargetGender() != null) {
+            if (user.getGender() == null || user.getGender() != meetup.getTargetGender()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not meet gender requirements");
+            }
+        }
+
         // Prevent duplicate joins
         Optional<Participation> existing = participationRepository.findByParticipantIdAndMeetupId(
             user.getId(),

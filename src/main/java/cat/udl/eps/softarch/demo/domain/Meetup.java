@@ -3,7 +3,6 @@ package cat.udl.eps.softarch.demo.domain;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
-import java.time.Instant;
 
 @Entity
 @Table(name = "Meetup")
@@ -34,6 +33,13 @@ public class Meetup extends UriEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "organizer_id")
     private User organizer;
+
+    private Integer minAge;
+
+    private Integer maxAge;
+
+    @Enumerated(EnumType.STRING)
+    private Gender targetGender;
 
     public enum Visibility {
         PUBLIC, PRIVATE, GROUP
