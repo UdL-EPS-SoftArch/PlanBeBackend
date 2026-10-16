@@ -34,6 +34,7 @@ public class UserEventHandler {
     @HandleBeforeCreate
     public void handleUserPreCreate(User user) {
         logger.info("Before creating: {}", user.toString());
+        checkNotAlreadyAuthenticated();
     }
 
     @HandleBeforeSave
@@ -74,7 +75,7 @@ public class UserEventHandler {
             userRepository.save(user);
         }
     }
-    public void handleBeforeCreate(User user) {
+    private void checkNotAlreadyAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // If the user is already authenticated and not anonymous, forbid registration

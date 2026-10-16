@@ -30,10 +30,4 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
     Iterable<Participation> findMyParticipations();
 
     long countByMeetupId(Long meetupId);
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
-
-@RepositoryRestResource
-public interface ParticipationRepository extends CrudRepository<Participation, Long>, PagingAndSortingRepository<Participation, Long> {
 }
