@@ -34,7 +34,6 @@ public class Invitation extends UriEntity<Long> {
     private Meetup meetup;
 
     @Enumerated(EnumType.STRING)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private InvitationStatus status;
 
     @DateTimeFormat

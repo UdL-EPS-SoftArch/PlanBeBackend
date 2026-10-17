@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.repository;
 
 import cat.udl.eps.softarch.demo.domain.Invitation;
+import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -8,6 +9,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.util.Optional;
 
@@ -30,4 +32,12 @@ public interface InvitationRepository extends CrudRepository<Invitation, Long>, 
     Optional<Invitation> findByInviteeIdAndMeetupId(String inviteeId, Long meetupId);
 
     boolean existsByInviteeIdAndMeetupId(String inviteeId, Long meetupId);
+
+    // Stored values, used to compare against the incoming changes before saving
+    @RestResource(exported = false)
+    @Query("SELECT i.status FROM Invitation i WHERE i.id = :id")
+    InvitationStatus findStoredStatusById(@Param("id") Long id);
+
+    @RestResource(exported = false)
+    boolean existsByIdAndInviteeIdAndMeetupId(Long id, String inviteeId, Long meetupId);
 }

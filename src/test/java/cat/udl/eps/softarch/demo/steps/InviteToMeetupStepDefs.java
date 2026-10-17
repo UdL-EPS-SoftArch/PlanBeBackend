@@ -3,9 +3,12 @@ package cat.udl.eps.softarch.demo.steps;
 import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.Meetup;
+import cat.udl.eps.softarch.demo.domain.Participation;
+import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
+import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -18,6 +21,7 @@ import java.time.Instant;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
@@ -26,20 +30,28 @@ public class InviteToMeetupStepDefs {
     private final UserRepository userRepository;
     private final MeetupRepository meetupRepository;
     private final InvitationRepository invitationRepository;
+    private final ParticipationRepository participationRepository;
 
     public InviteToMeetupStepDefs(StepDefs stepDefs, UserRepository userRepository,
-        MeetupRepository meetupRepository, InvitationRepository invitationRepository) {
+        MeetupRepository meetupRepository, InvitationRepository invitationRepository,
+        ParticipationRepository participationRepository) {
         this.stepDefs = stepDefs;
         this.userRepository = userRepository;
         this.meetupRepository = meetupRepository;
         this.invitationRepository = invitationRepository;
+        this.participationRepository = participationRepository;
     }
 
     @Given("There is a meetup with title {string} organized by {string}")
     public void thereIsAMeetupWithTitleOrganizedBy(String title, String organizerUsername) {
+        thereIsAMeetupWithTitleOrganizedByWithCapacity(title, organizerUsername, 10);
+    }
+
+    @Given("There is a meetup with title {string} organized by {string} with capacity {int}")
+    public void thereIsAMeetupWithTitleOrganizedByWithCapacity(String title, String organizerUsername, int capacity) {
         Meetup meetup = new Meetup();
         meetup.setTitle(title);
-        meetup.setCapacity(10);
+        meetup.setCapacity(capacity);
         meetup.setVisibility(Meetup.Visibility.PRIVATE);
         meetup.setStatus(Meetup.MeetupStatus.OPEN);
         meetup.setOrganizer(userRepository.findById(organizerUsername).orElseThrow());
@@ -56,6 +68,37 @@ public class InviteToMeetupStepDefs {
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setCreated(Instant.now());
         invitationRepository.save(invitation);
+    }
+
+    @Given("{string} is a confirmed participant of the meetup {string}")
+    public void isAConfirmedParticipantOfTheMeetup(String username, String title) {
+        Participation participation = new Participation();
+        participation.setParticipant(userRepository.findById(username).orElseThrow());
+        participation.setMeetup(meetupRepository.findByTitle(title).orElseThrow());
+        participation.setStatus(ParticipationStatus.CONFIRMED);
+        participation.setJoinedAt(Instant.now());
+        participationRepository.save(participation);
+    }
+
+    @Given("The invitation of {string} to the meetup {string} was already answered with {string}")
+    public void theInvitationWasAlreadyAnsweredWith(String inviteeUsername, String title, String status) {
+        Invitation invitation = findInvitation(inviteeUsername, title);
+        invitation.setStatus(InvitationStatus.valueOf(status));
+        invitationRepository.save(invitation);
+    }
+
+    @When("I answer the invitation of {string} to the meetup {string} with {string}")
+    public void iAnswerTheInvitationWith(String inviteeUsername, String title, String status) throws Throwable {
+        JSONObject answer = new JSONObject();
+        answer.put("status", status);
+        patchInvitation(findInvitation(inviteeUsername, title), answer);
+    }
+
+    @When("I move the invitation of {string} to the meetup {string} to the meetup {string}")
+    public void iMoveTheInvitationToTheMeetup(String inviteeUsername, String title, String newTitle) throws Throwable {
+        JSONObject change = new JSONObject();
+        change.put("meetup", meetupRepository.findByTitle(newTitle).orElseThrow().getUri());
+        patchInvitation(findInvitation(inviteeUsername, title), change);
     }
 
     @When("I invite {string} to the meetup {string}")
@@ -91,6 +134,31 @@ public class InviteToMeetupStepDefs {
     public void thereIsNoInvitation(String inviteeUsername, String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
         assertThat(invitationRepository.existsByInviteeIdAndMeetupId(inviteeUsername, meetup.getId()), is(false));
+    }
+
+    @And("{string} has a participation in the meetup {string} with status {string}")
+    public void hasAParticipationInTheMeetupWithStatus(String username, String title, String status) {
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        Participation participation = participationRepository
+            .findByParticipantIdAndMeetupId(username, meetup.getId()).orElseThrow();
+        assertThat(participation.getStatus().name(), is(status));
+    }
+
+    @And("{string} has no participation in the meetup {string}")
+    public void hasNoParticipationInTheMeetup(String username, String title) {
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        assertThat(participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId()).isPresent(), is(false));
+    }
+
+    private void patchInvitation(Invitation invitation, JSONObject body) throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(
+                patch(invitation.getUri())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(body.toString())
+                    .characterEncoding(StandardCharsets.UTF_8)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
     }
 
     private Invitation findInvitation(String inviteeUsername, String title) {
