@@ -70,6 +70,13 @@ public class InviteToMeetupStepDefs {
         invitationRepository.save(invitation);
     }
 
+    @Given("The meetup {string} has status {string}")
+    public void theMeetupHasStatus(String title, String status) {
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        meetup.setStatus(Meetup.MeetupStatus.valueOf(status));
+        meetupRepository.save(meetup);
+    }
+
     @Given("{string} is a confirmed participant of the meetup {string}")
     public void isAConfirmedParticipantOfTheMeetup(String username, String title) {
         Participation participation = new Participation();

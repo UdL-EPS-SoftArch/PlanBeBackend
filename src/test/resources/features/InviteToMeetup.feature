@@ -34,6 +34,18 @@ Feature: Invite to Meetup
     Then The response code is 401
     And There is no invitation of "guest" to the meetup "Team Dinner"
 
+  Scenario Outline: Cannot invite to a <status> meetup
+    Given The meetup "Team Dinner" has status "<status>"
+    And I login as "organizer" with password "password"
+    When I invite "guest" to the meetup "Team Dinner"
+    Then The response code is 409
+    And There is no invitation of "guest" to the meetup "Team Dinner"
+
+    Examples:
+      | status    |
+      | CANCELLED |
+      | FINISHED  |
+
   Scenario: Invitee accepts an invitation
     Given "guest" has already been invited to the meetup "Team Dinner"
     And I login as "guest" with password "password"

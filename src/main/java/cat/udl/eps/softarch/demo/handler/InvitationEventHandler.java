@@ -53,6 +53,10 @@ public class InvitationEventHandler {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the meetup organizer can send invitations");
         }
 
+        if (meetup.getStatus() == Meetup.MeetupStatus.CANCELLED || meetup.getStatus() == Meetup.MeetupStatus.FINISHED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot invite to a cancelled or finished meetup");
+        }
+
         if (invitationRepository.existsByInviteeIdAndMeetupId(invitation.getInvitee().getId(), meetup.getId())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already invited to this meetup");
         }
