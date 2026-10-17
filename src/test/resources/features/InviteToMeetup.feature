@@ -63,6 +63,20 @@ Feature: Invite to Meetup
     Then The response code is 200
     And "guest" has a participation in the meetup "Small Dinner" with status "WAITING"
 
+  Scenario Outline: Cannot accept an invitation to a <status> meetup
+    Given "guest" has already been invited to the meetup "Team Dinner"
+    And The meetup "Team Dinner" has status "<status>"
+    And I login as "guest" with password "password"
+    When I answer the invitation of "guest" to the meetup "Team Dinner" with "ACCEPTED"
+    Then The response code is 409
+    And The invitation of "guest" to the meetup "Team Dinner" has status "PENDING"
+    And "guest" has no participation in the meetup "Team Dinner"
+
+    Examples:
+      | status    |
+      | CANCELLED |
+      | FINISHED  |
+
   Scenario: Invitee declines an invitation
     Given "guest" has already been invited to the meetup "Team Dinner"
     And I login as "guest" with password "password"

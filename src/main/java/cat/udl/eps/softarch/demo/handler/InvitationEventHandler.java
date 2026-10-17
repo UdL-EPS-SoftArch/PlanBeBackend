@@ -53,7 +53,7 @@ public class InvitationEventHandler {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the meetup organizer can send invitations");
         }
 
-        if (meetup.getStatus() == Meetup.MeetupStatus.CANCELLED || meetup.getStatus() == Meetup.MeetupStatus.FINISHED) {
+        if (isClosed(meetup)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot invite to a cancelled or finished meetup");
         }
 
@@ -86,6 +86,10 @@ public class InvitationEventHandler {
         if (invitation.getStatus() != InvitationStatus.ACCEPTED && invitation.getStatus() != InvitationStatus.DECLINED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invitation must be ACCEPTED or DECLINED");
         }
+
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED && isClosed(invitation.getMeetup())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot accept an invitation to a cancelled or finished meetup");
+        }
     }
 
     @HandleAfterSave
@@ -115,5 +119,9 @@ public class InvitationEventHandler {
             meetup.setStatus(Meetup.MeetupStatus.FULL);
             meetupRepository.save(meetup);
         }
+    }
+
+    private boolean isClosed(Meetup meetup) {
+        return meetup.getStatus() == Meetup.MeetupStatus.CANCELLED || meetup.getStatus() == Meetup.MeetupStatus.FINISHED;
     }
 }
