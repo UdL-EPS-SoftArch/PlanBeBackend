@@ -1,5 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;

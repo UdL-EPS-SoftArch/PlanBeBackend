@@ -1,5 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
