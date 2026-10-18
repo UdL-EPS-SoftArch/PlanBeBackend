@@ -74,6 +74,8 @@ public class UserEventHandler {
             userRepository.save(user);
         }
     }
+
+    @HandleBeforeCreate
     public void handleBeforeCreate(User user) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
