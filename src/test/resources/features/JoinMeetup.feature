@@ -6,7 +6,7 @@ Feature: Join and Leave a Public Meetup
     Given the following meetups exist:
       | title        | capacity | visibility | status |
       | Padel Match  | 4        | PUBLIC     | OPEN   |
-      | Secret Club  | 10       | PRIVATE   | OPEN   |
+      | Secret Club  | 10       | PRIVATE    | OPEN   |
       | Full Event   | 1        | PUBLIC     | OPEN   |
 
   Scenario: User joins public meetup successfully

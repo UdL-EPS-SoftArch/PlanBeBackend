@@ -9,7 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 
+import java.time.Instant;
 import java.util.Optional;
+import java.util.stream.StreamSupport;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -19,6 +21,7 @@ public class JoinMeetupStepDefs {
     private final MeetupRepository meetupRepository;
     private final UserRepository userRepository;
     private final ParticipationRepository participationRepository;
+    private Meetup currentMeetup;
 
     public JoinMeetupStepDefs(StepDefs stepDefs, MeetupRepository meetupRepository, UserRepository userRepository,
                               ParticipationRepository participationRepository) {
@@ -125,6 +128,68 @@ public class JoinMeetupStepDefs {
                 .with(SecurityMockMvcRequestPostProcessors.user("user1"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
+    }
+
+    @Given("a meetup exists with capacity {int}")
+    public void aMeetupExistsWithCapacity(Integer capacity) {
+        Meetup meetup = new Meetup();
+        meetup.setTitle("Test Meetup");
+        meetup.setCapacity(capacity);
+        meetup.setVisibility(Meetup.Visibility.PUBLIC);
+        meetup.setStatus(Meetup.MeetupStatus.OPEN);
+        currentMeetup = RunAs.admin(() -> meetupRepository.save(meetup));
+    }
+
+    @Given("{int} user(s) have already joined the meetup")
+    @Given("{int} user has already joined the meetup")
+    public void usersHaveAlreadyJoinedTheMeetup(Integer count) {
+        for (int i = 0; i < count; i++) {
+            User user = userRepository.findById("user" + i).orElseGet(() -> {
+                User newUser = new User();
+                newUser.setId("user" + i);
+                newUser.setPassword("password123");
+                newUser.setEmail("user" + i + "@sample.app");
+                newUser.encodePassword();
+                return userRepository.save(newUser);
+            });
+
+            Participation participation = new Participation();
+            participation.setParticipant(user);
+            participation.setMeetup(currentMeetup);
+            participation.setStatus(ParticipationStatus.CONFIRMED);
+            participation.setJoinedAt(Instant.now());
+            participationRepository.save(participation);
+        }
+    }
+
+    @When("I join the meetup")
+    public void iJoinTheCurrentMeetup() throws Exception {
+        iAmLoggedInAs("me");
+        String body = "{\"meetup\": \"/meetups/" + currentMeetup.getId() + "\" }";
+        stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.post("/participations")
+            .with(SecurityMockMvcRequestPostProcessors.user("me"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(body));
+    }
+
+    @When("a participant leaves the meetup")
+    public void aParticipantLeavesTheMeetup() throws Exception {
+        Participation participation = StreamSupport.stream(participationRepository.findAll().spliterator(), false)
+            .filter(p -> p.getMeetup() != null && p.getMeetup().getId().equals(currentMeetup.getId()))
+            .filter(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
+            .findFirst()
+            .orElseThrow();
+
+        stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.delete("/participations/" + participation.getId())
+            .with(SecurityMockMvcRequestPostProcessors.user(participation.getParticipant().getId())));
+    }
+
+    @Then("the meetup status should be {string}")
+    public void theMeetupStatusShouldBe(String status) {
+        Meetup updatedMeetup = meetupRepository.findById(currentMeetup.getId()).orElseThrow();
+        if (!updatedMeetup.getStatus().name().equals(status)) {
+            throw new AssertionError("Expected meetup status " + status + " but was " + updatedMeetup.getStatus().name());
+        }
     }
 
     @Then("the response code is {int}")
