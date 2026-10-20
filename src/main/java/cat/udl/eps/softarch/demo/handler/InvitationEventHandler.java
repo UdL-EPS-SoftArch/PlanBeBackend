@@ -8,7 +8,6 @@ import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
-import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -19,10 +18,10 @@ import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
+import java.util.EnumSet;
 
 @Component
 @RepositoryEventHandler
@@ -30,15 +29,15 @@ public class InvitationEventHandler {
     final InvitationRepository invitationRepository;
     final UserRepository userRepository;
     final ParticipationRepository participationRepository;
-    final MeetupRepository meetupRepository;
+    final WaitingList waitingList;
     final Notifier notifier;
 
     public InvitationEventHandler(InvitationRepository invitationRepository, UserRepository userRepository,
-        ParticipationRepository participationRepository, MeetupRepository meetupRepository, Notifier notifier) {
+        ParticipationRepository participationRepository, WaitingList waitingList, Notifier notifier) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
         this.participationRepository = participationRepository;
-        this.meetupRepository = meetupRepository;
+        this.waitingList = waitingList;
         this.notifier = notifier;
     }
 
@@ -108,32 +107,27 @@ public class InvitationEventHandler {
     }
 
     @HandleAfterSave
-    @Transactional
     public void handleInvitationPostSave(Invitation invitation) {
         if (invitation.getStatus() != InvitationStatus.ACCEPTED) {
             return;
         }
 
-        // Accepting joins the meetup, respecting its capacity like a regular join
+        // Accepting joins the meetup like a regular join: the invitee enters the queue and WaitingList
+        // gives them a spot if there is one (and sets the meetup OPEN/FULL)
         Meetup meetup = invitation.getMeetup();
-        Participation participation = participationRepository
-            .findByParticipantIdAndMeetupId(invitation.getInvitee().getId(), meetup.getId())
-            .orElseGet(Participation::new);
-        if (participation.getId() != null && participation.getStatus() != ParticipationStatus.CANCELLED) {
+        String inviteeId = invitation.getInvitee().getId();
+        if (participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(inviteeId, meetup.getId(),
+                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))) {
             return;
         }
 
-        long confirmed = participationRepository.countByMeetupIdAndStatus(meetup.getId(), ParticipationStatus.CONFIRMED);
+        Participation participation = new Participation();
         participation.setParticipant(invitation.getInvitee());
         participation.setMeetup(meetup);
-        participation.setStatus(confirmed >= meetup.getCapacity() ? ParticipationStatus.WAITING : ParticipationStatus.CONFIRMED);
+        participation.setStatus(ParticipationStatus.WAITING);
         participation.setJoinedAt(Instant.now());
         participationRepository.save(participation);
-
-        if (confirmed + 1 >= meetup.getCapacity() && participation.getStatus() == ParticipationStatus.CONFIRMED) {
-            meetup.setStatus(Meetup.MeetupStatus.FULL);
-            meetupRepository.save(meetup);
-        }
+        waitingList.fillFreeSpots(meetup.getId(), inviteeId);
     }
 
     private boolean isClosed(Meetup meetup) {

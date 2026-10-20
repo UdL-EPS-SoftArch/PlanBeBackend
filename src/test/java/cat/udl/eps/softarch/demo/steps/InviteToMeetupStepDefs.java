@@ -88,8 +88,8 @@ public class InviteToMeetupStepDefs {
     @Given("The meetup {string} has status {string}")
     public void theMeetupHasStatus(String title, String status) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        meetup.setStatus(Meetup.MeetupStatus.valueOf(status));
-        meetupRepository.save(meetup);
+        meetup.setStatus(MeetupStatus.valueOf(status));
+        RunAs.admin(() -> meetupRepository.save(meetup));
     }
 
     @Given("{string} is a confirmed participant of the meetup {string}")
