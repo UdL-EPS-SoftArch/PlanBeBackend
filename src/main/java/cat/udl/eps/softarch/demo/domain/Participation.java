@@ -1,29 +1,33 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import jakarta.persistence.*;
+import java.time.Instant;
 
+@Entity
+@Table(name = "Participation")
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Entity
 public class Participation extends UriEntity<Long> {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "participant_id")
+    private User participant;
 
     @ManyToOne
     @JoinColumn(name = "meetup_id")
     private Meetup meetup;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private ParticipationStatus status = ParticipationStatus.CONFIRMED;
 
-    public enum ParticipationStatus {
-        CONFIRMED, WAITING
-    }
+    @Column(nullable = false)
+    private Instant joinedAt;
 }

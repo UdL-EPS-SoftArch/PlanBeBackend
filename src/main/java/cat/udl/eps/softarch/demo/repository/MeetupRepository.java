@@ -54,4 +54,7 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
     @Override
     @PreAuthorize("hasRole('ADMIN') or #entity.organizer.id == authentication.name")
     void delete(Meetup entity);
+
+    @RestResource(exported = false)
+    Optional<Meetup> findByTitle(String title);
 }

@@ -204,9 +204,10 @@ public class MeetupStepDefs {
                 meetup.setOrganizer(rowOrganizer);
                 meetup.setStartDate(row.containsKey("startDate") ? Instant.parse(row.get("startDate")) : Instant.now().plusSeconds(3600));
                 meetup.setEndDate(row.containsKey("endDate") ? Instant.parse(row.get("endDate")) : Instant.now().plusSeconds(7200));
-                meetup.setCapacity(10);
+                meetup.setCapacity(row.containsKey("capacity") ? Integer.parseInt(row.get("capacity")) : 10);
                 if (row.containsKey("category")) meetup.setCategory(cat.udl.eps.softarch.demo.domain.enums.Category.valueOf(row.get("category")));
                 if (row.containsKey("visibility")) meetup.setVisibility(MeetupVisibility.valueOf(row.get("visibility")));
+                if (row.containsKey("status")) meetup.setStatus(MeetupStatus.valueOf(row.get("status")));
                 if (row.containsKey("city")) {
                     Location loc = new Location();
                     loc.setCity(row.get("city"));
