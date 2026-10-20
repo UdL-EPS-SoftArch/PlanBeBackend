@@ -35,6 +35,16 @@ Feature: Join and Leave a Public Meetup
     Then the response code is 200
     And the participation status is "CANCELLED"
 
+  Scenario: User who left can join again
+    Given I am logged in as "user1"
+    And I have joined the meetup "Padel Match"
+    When I leave the meetup "Padel Match"
+    Then the response code is 200
+    When I join the meetup "Padel Match"
+    Then the response code is 201
+    And the participation status is "CONFIRMED"
+    And my earlier participation in the meetup "Padel Match" is kept as "CANCELLED"
+
   Scenario: Cannot join private meetup without invitation
     Given I am logged in as "user1"
     When I join the meetup "Secret Club"

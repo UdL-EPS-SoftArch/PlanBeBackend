@@ -3,9 +3,11 @@ package cat.udl.eps.softarch.demo.handler;
 import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.Meetup;
+import cat.udl.eps.softarch.demo.domain.NotificationType;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
+import org.springframework.data.rest.core.annotation.HandleAfterCreate;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.RepositoryEventHandler;
 import org.springframework.http.HttpStatus;
@@ -20,10 +22,13 @@ import java.time.Instant;
 public class InvitationEventHandler {
     final InvitationRepository invitationRepository;
     final UserRepository userRepository;
+    final Notifier notifier;
 
-    public InvitationEventHandler(InvitationRepository invitationRepository, UserRepository userRepository) {
+    public InvitationEventHandler(InvitationRepository invitationRepository, UserRepository userRepository,
+                                  Notifier notifier) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
+        this.notifier = notifier;
     }
 
     @HandleBeforeCreate
@@ -48,5 +53,16 @@ public class InvitationEventHandler {
         invitation.setInvitedBy(inviter);
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setCreated(Instant.now());
+    }
+
+    /** #42: the invitee gets an INVITATION notification pointing to the invitation (to accept/reject it). */
+    @HandleAfterCreate
+    public void handleInvitationPostCreate(Invitation invitation) {
+        User inviter = invitation.getInvitedBy();
+        String inviterName = inviter.getDisplayName() != null && !inviter.getDisplayName().isBlank()
+            ? inviter.getDisplayName() : inviter.getId();
+        notifier.notify(invitation.getInvitee(), NotificationType.INVITATION,
+            "%s invited you to the meetup \"%s\"".formatted(inviterName, invitation.getMeetup().getTitle()),
+            invitation);
     }
 }
