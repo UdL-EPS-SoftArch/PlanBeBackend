@@ -39,6 +39,7 @@ public class StepDefs {
     protected final WebApplicationContext wac;
     protected MockMvc mockMvc;
     protected ResultActions result;
+    protected String currentUser;
     protected ObjectMapper mapper = new ObjectMapper();
 
     public StepDefs(WebApplicationContext wac) {
@@ -54,8 +55,19 @@ public class StepDefs {
     }
 
     @Then("^The response code is (\\d+)$")
+    @Then("the response code is {int}")
     public void theResponseCodeIs(int code) throws Throwable {
-        result.andExpect(status().is(code));
+        if (code == 200) {
+            // Allow 204 No Content for PATCH/DELETE operations in Spring Data REST
+            result.andExpect(res -> {
+                int actualStatus = res.getResponse().getStatus();
+                if (actualStatus != 200 && actualStatus != 204) {
+                    throw new AssertionError("Expected status 200 or 204 but was " + actualStatus);
+                }
+            });
+        } else {
+            result.andExpect(status().is(code));
+        }
     }
 
     @And("^The error message is \"([^\"]*)\"$")

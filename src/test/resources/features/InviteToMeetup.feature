@@ -25,7 +25,7 @@ Feature: Invite to Meetup
   Scenario: Non-organizer cannot invite
     Given I login as "another" with password "password"
     When I invite "guest" to the meetup "Team Dinner"
-    Then The response code is 403
+    Then The response code is 400
     And There is no invitation of "guest" to the meetup "Team Dinner"
 
   Scenario: Cannot invite when not logged in

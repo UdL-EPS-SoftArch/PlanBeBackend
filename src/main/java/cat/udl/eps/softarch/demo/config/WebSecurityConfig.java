@@ -35,8 +35,10 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/interests", "/interests/**").permitAll()
                 .requestMatchers("/interests", "/interests/**").hasRole("ADMIN")
                 .requestMatchers("/invitations", "/invitations/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/records").permitAll()    // Allow listing public records
-                .requestMatchers(HttpMethod.GET, "/records/*").permitAll()  // Allow retrieving public records
+                // Notifications are created by the handlers only: users can list/read them and PATCH the read flag
+                .requestMatchers(HttpMethod.GET, "/notifications", "/notifications/**").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/notifications/*").authenticated()
+                .requestMatchers("/notifications", "/notifications/**").denyAll()
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/*/*").authenticated()

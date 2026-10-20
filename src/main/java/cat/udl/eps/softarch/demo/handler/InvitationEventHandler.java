@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.handler;
 import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.Meetup;
+import cat.udl.eps.softarch.demo.domain.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
@@ -10,6 +11,7 @@ import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
+import org.springframework.data.rest.core.annotation.HandleAfterCreate;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
 import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.HandleBeforeSave;
@@ -29,13 +31,15 @@ public class InvitationEventHandler {
     final UserRepository userRepository;
     final ParticipationRepository participationRepository;
     final MeetupRepository meetupRepository;
+    final Notifier notifier;
 
     public InvitationEventHandler(InvitationRepository invitationRepository, UserRepository userRepository,
-        ParticipationRepository participationRepository, MeetupRepository meetupRepository) {
+        ParticipationRepository participationRepository, MeetupRepository meetupRepository, Notifier notifier) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
         this.participationRepository = participationRepository;
         this.meetupRepository = meetupRepository;
+        this.notifier = notifier;
     }
 
     @HandleBeforeCreate
@@ -64,6 +68,17 @@ public class InvitationEventHandler {
         invitation.setInvitedBy(inviter);
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setCreated(Instant.now());
+    }
+
+    /** #42: the invitee gets an INVITATION notification pointing to the invitation (to accept/reject it). */
+    @HandleAfterCreate
+    public void handleInvitationPostCreate(Invitation invitation) {
+        User inviter = invitation.getInvitedBy();
+        String inviterName = inviter.getDisplayName() != null && !inviter.getDisplayName().isBlank()
+            ? inviter.getDisplayName() : inviter.getId();
+        notifier.notify(invitation.getInvitee(), NotificationType.INVITATION,
+            "%s invited you to the meetup \"%s\"".formatted(inviterName, invitation.getMeetup().getTitle()),
+            invitation);
     }
 
     @HandleBeforeSave
