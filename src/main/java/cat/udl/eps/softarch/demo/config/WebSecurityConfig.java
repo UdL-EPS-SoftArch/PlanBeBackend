@@ -39,8 +39,6 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/notifications", "/notifications/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/notifications/*").authenticated()
                 .requestMatchers("/notifications", "/notifications/**").denyAll()
-                .requestMatchers(HttpMethod.GET, "/records").permitAll()    // Allow listing public records
-                .requestMatchers(HttpMethod.GET, "/records/*").permitAll()  // Allow retrieving public records
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.POST, "/*/*").authenticated()
                 .requestMatchers(HttpMethod.PUT, "/*/*").authenticated()

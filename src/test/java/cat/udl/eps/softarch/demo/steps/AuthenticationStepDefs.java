@@ -11,6 +11,8 @@ import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 
 public class AuthenticationStepDefs {
+    @Autowired
+    private StepDefs stepDefs;
 
     public static String currentUsername;
     public static String currentPassword;
@@ -42,6 +44,14 @@ public class AuthenticationStepDefs {
         }
         AuthenticationStepDefs.currentUsername = username;
         AuthenticationStepDefs.currentPassword = password;
+        stepDefs.currentUser = username;
+    }
+
+    @Given("^I'm logged in as \"([^\"]*)\"$")
+    public void iMLoggedInAs(String username) {
+        AuthenticationStepDefs.currentUsername = username;
+        AuthenticationStepDefs.currentPassword = "password";
+        stepDefs.currentUser = username;
     }
 
     @Given("^I'm not logged in$")
