@@ -61,6 +61,11 @@ public class ParticipationEventHandler {
 
         Meetup meetup = participation.getMeetup();
 
+        // Cancelled meetups do not accept new participations
+        if (meetup.getStatus() == Meetup.MeetupStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot join a cancelled meetup");
+        }
+
         // Assign current authenticated user as participant
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(currentUsername)
