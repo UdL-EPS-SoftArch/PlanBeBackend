@@ -45,6 +45,10 @@ public class Meetup extends UriEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "organizer_id")
     private User organizer;
+  
+    private Integer minAge;
+
+    private Integer maxAge;
 
     // Same names/types as branch 9-épica-quedadas-meetup (#23) so both merge cleanly.
     // Nullable on purpose: validations (@NotNull, @Future, endDate > startDate) belong to #23.
