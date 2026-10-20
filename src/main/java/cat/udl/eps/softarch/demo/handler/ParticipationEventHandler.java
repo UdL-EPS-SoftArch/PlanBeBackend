@@ -26,6 +26,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Join / leave a meetup and waiting list (#22). Promotions and SPOT_FREED (#44) are done by {@link WaitingList}.
