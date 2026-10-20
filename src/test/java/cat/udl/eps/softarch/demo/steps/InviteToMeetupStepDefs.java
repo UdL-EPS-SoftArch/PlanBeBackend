@@ -4,6 +4,8 @@ import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -12,6 +14,9 @@ import io.cucumber.java.en.Given;
 import io.cucumber.java.en.When;
 import org.json.JSONObject;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -40,10 +45,20 @@ public class InviteToMeetupStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle(title);
         meetup.setCapacity(10);
-        meetup.setVisibility(Meetup.Visibility.PRIVATE);
-        meetup.setStatus(Meetup.MeetupStatus.OPEN);
+        meetup.setVisibility(Visibility.PRIVATE);
+        meetup.setStatus(MeetupStatus.OPEN);
         meetup.setOrganizer(userRepository.findById(organizerUsername).orElseThrow());
-        meetupRepository.save(meetup);
+
+        // MeetupRepository.save is guarded by @PreAuthorize, so an authenticated
+        // SecurityContext is required when creating the meetup from the test thread
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(organizerUsername, null,
+                        java.util.Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))));
+        try {
+            meetupRepository.save(meetup);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Given("{string} has already been invited to the meetup {string}")
