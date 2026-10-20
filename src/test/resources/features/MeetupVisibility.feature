@@ -22,3 +22,43 @@ Feature: Meetup Visibility
     And a meetup "My Secret Meetup" exists with visibility "PRIVATE"
     When I try to retrieve the meetup "My Secret Meetup"
     Then the response code is 200
+
+  Scenario: Invited user retrieves private meetup
+    Given There is a registered user with username "guest" and password "password" and email "guest@sample.app"
+    And a meetup "Invite Only" exists created by "organizer" with visibility "PRIVATE"
+    And "guest" has already been invited to the meetup "Invite Only"
+    And I'm logged in as "guest"
+    When I try to retrieve the meetup "Invite Only"
+    Then the response code is 200
+
+  Scenario: Invited user sees private meetup when listing
+    Given There is a registered user with username "guest" and password "password" and email "guest@sample.app"
+    And a meetup "Invite Only" exists created by "organizer" with visibility "PRIVATE"
+    And "guest" has already been invited to the meetup "Invite Only"
+    And I'm logged in as "guest"
+    When I list the meetups visible to me
+    Then I should see "Invite Only"
+
+  Scenario: User who declined the invitation cannot retrieve private meetup
+    Given There is a registered user with username "guest" and password "password" and email "guest@sample.app"
+    And a meetup "Invite Only" exists created by "organizer" with visibility "PRIVATE"
+    And "guest" has already been invited to the meetup "Invite Only"
+    And The invitation of "guest" to the meetup "Invite Only" was already answered with "DECLINED"
+    And I'm logged in as "guest"
+    When I try to retrieve the meetup "Invite Only"
+    Then the response code is 403
+
+  Scenario: Participant retrieves private meetup
+    Given There is a registered user with username "guest" and password "password" and email "guest@sample.app"
+    And a meetup "Invite Only" exists created by "organizer" with visibility "PRIVATE"
+    And "guest" is a confirmed participant of the meetup "Invite Only"
+    And I'm logged in as "guest"
+    When I try to retrieve the meetup "Invite Only"
+    Then the response code is 200
+
+  Scenario: Non-invited user does not see private meetup when listing
+    Given There is a registered user with username "another" and password "password" and email "another@sample.app"
+    And a meetup "Invite Only" exists created by "organizer" with visibility "PRIVATE"
+    And I'm logged in as "another"
+    When I list the meetups visible to me
+    Then I should not see "Invite Only"

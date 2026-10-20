@@ -26,6 +26,8 @@ import java.time.Instant;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -170,6 +172,15 @@ public class InviteToMeetupStepDefs {
     public void hasNoParticipationInTheMeetup(String username, String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
         assertThat(participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId()).isPresent(), is(false));
+    }
+
+    @When("I list the meetups visible to me")
+    public void iListTheMeetupsVisibleToMe() throws Throwable {
+        stepDefs.result = stepDefs.mockMvc.perform(
+                get("/meetups/search/findVisibleMeetups")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(user(stepDefs.currentUser).roles("USER")))
+            .andDo(print());
     }
 
     private void patchInvitation(Invitation invitation, JSONObject body) throws Throwable {

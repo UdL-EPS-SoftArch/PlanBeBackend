@@ -16,19 +16,32 @@ import java.util.Optional;
 @RepositoryRestResource
 public interface MeetupRepository extends JpaRepository<Meetup, Long> {
 
-    @Query("select m from Meetup m where m.visibility = 'PUBLIC' or m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true")
+    // PUBLIC meetups, or PRIVATE ones for their organizer, ADMIN, invitees with a PENDING or ACCEPTED
+    // invitation and active participants (#28)
+    String VISIBILITY_CLAUSE =
+        "m.visibility = 'PUBLIC' " +
+        "or m.organizer.id = ?#{authentication.name} " +
+        "or ?#{hasRole('ADMIN')} = true " +
+        "or exists (select i from Invitation i where i.meetup = m and i.invitee.id = ?#{authentication.name} " +
+        "and i.status in (cat.udl.eps.softarch.demo.domain.InvitationStatus.PENDING, " +
+        "cat.udl.eps.softarch.demo.domain.InvitationStatus.ACCEPTED)) " +
+        "or exists (select p from Participation p where p.meetup = m and p.participant.id = ?#{authentication.name} " +
+        "and p.status in (cat.udl.eps.softarch.demo.domain.ParticipationStatus.CONFIRMED, " +
+        "cat.udl.eps.softarch.demo.domain.ParticipationStatus.WAITING))";
+
+    @Query("select m from Meetup m where " + VISIBILITY_CLAUSE)
     List<Meetup> findVisibleMeetups();
 
-    @Query("select m from Meetup m where m.category = ?1 and (m.visibility = 'PUBLIC' or m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true)")
+    @Query("select m from Meetup m where m.category = ?1 and (" + VISIBILITY_CLAUSE + ")")
     List<Meetup> findByCategoryAndVisibility(cat.udl.eps.softarch.demo.domain.enums.Category category);
 
-    @Query("select m from Meetup m where m.location.city = ?1 and (m.visibility = 'PUBLIC' or m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true)")
+    @Query("select m from Meetup m where m.location.city = ?1 and (" + VISIBILITY_CLAUSE + ")")
     List<Meetup> findByCityAndVisibility(String city);
 
-    @Query("select m from Meetup m where m.startDate > ?1 and (m.visibility = 'PUBLIC' or m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true)")
+    @Query("select m from Meetup m where m.startDate > ?1 and (" + VISIBILITY_CLAUSE + ")")
     List<Meetup> findByStartDateAfterAndVisibility(java.time.Instant startDate);
 
-    @Query("select m from Meetup m where m.organizer.id = ?1 and (m.visibility = 'PUBLIC' or m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true)")
+    @Query("select m from Meetup m where m.organizer.id = ?1 and (" + VISIBILITY_CLAUSE + ")")
     List<Meetup> findByOrganizerAndVisibility(String organizerId);
 
     @Query("select m from Meetup m where m.id = ?1 and (m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true)")

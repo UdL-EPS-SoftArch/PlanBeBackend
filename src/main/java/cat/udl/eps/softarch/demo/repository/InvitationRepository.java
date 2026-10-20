@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.rest.core.annotation.RestResource;
 
+import java.util.Collection;
 import java.util.Optional;
 
 @RepositoryRestResource
@@ -40,4 +41,8 @@ public interface InvitationRepository extends CrudRepository<Invitation, Long>, 
 
     @RestResource(exported = false)
     boolean existsByIdAndInviteeIdAndMeetupId(Long id, String inviteeId, Long meetupId);
+
+    // Used by MeetupSecurity: invitees see the private meetups they are invited to
+    @RestResource(exported = false)
+    boolean existsByMeetupIdAndInviteeIdAndStatusIn(Long meetupId, String inviteeId, Collection<InvitationStatus> statuses);
 }
