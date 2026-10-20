@@ -160,4 +160,27 @@ public class JoinMeetupStepDefs {
             throw new AssertionError(e);
         }
     }
+
+    // ---------- Steps of the cancel meetup feature ----------
+
+    @Given("the meetup {string} is cancelled")
+    public void theMeetupIsCancelled(String title) {
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        meetup.setStatus(Meetup.MeetupStatus.CANCELLED);
+        meetupRepository.save(meetup);
+    }
+
+    @When("the organizer cancels the meetup {string}")
+    public void theOrganizerCancelsTheMeetup(String title) throws Exception {
+        if (this.mockMvc == null) setup();
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        ensureUser("user1");
+
+        String body = "{\"status\": \"CANCELLED\"}";
+
+        this.result = mockMvc.perform(MockMvcRequestBuilders.patch("/meetups/" + meetup.getId())
+                .with(SecurityMockMvcRequestPostProcessors.user("user1"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body));
+    }
 }

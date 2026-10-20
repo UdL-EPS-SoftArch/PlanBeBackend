@@ -80,6 +80,15 @@ public class MeetupEventHandler {
         if (!wasCancelled && isCancelled) {
             notifier.notifyAll(activeParticipants(meetup), organizerId, NotificationType.MEETUP_CANCELLED,
                 "The meetup \"%s\" has been cancelled".formatted(meetup.getTitle()), meetup);
+          
+            participationRepository.findByMeetupIdAndStatusIn(
+                meetup.getId(),
+                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING)
+            ).forEach(participation -> {
+                participation.setStatus(ParticipationStatus.CANCELLED);
+                participationRepository.save(participation);
+            });
+          
         } else if (!isCancelled) {
             List<String> changes = new ArrayList<>();
             if (!Objects.equals(before.startDate(), meetup.getStartDate())

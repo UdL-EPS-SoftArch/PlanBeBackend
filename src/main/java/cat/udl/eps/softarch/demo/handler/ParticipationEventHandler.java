@@ -61,6 +61,11 @@ public class ParticipationEventHandler {
 
         Meetup meetup = participation.getMeetup();
 
+        // Cancelled meetups do not accept new participations
+        if (meetup.getStatus() == Meetup.MeetupStatus.CANCELLED) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot join a cancelled meetup");
+        }
+
         // Assign current authenticated user as participant
         String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findById(currentUsername)
@@ -72,6 +77,32 @@ public class ParticipationEventHandler {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot join private meetup without invitation");
         }
 
+        // Check age and gender restrictions
+        if (meetup.getMinAge() != null) {
+            Integer age = user.getAge();
+            if (age == null || age < meetup.getMinAge()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not meet age requirements");
+            }
+        }
+        if (meetup.getMaxAge() != null) {
+            Integer age = user.getAge();
+            if (age == null || age > meetup.getMaxAge()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not meet age requirements");
+            }
+        }
+        if (meetup.getTargetGender() != null) {
+            if (user.getGender() == null || user.getGender() != meetup.getTargetGender()) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "User does not meet gender requirements");
+            }
+        }
+
+        // Prevent duplicate joins
+        Optional<Participation> existing = participationRepository.findByParticipantIdAndMeetupId(
+            user.getId(),
+            meetup.getId()
+        );
+        if (existing.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already joined this meetup");
         if (meetup.getStatus() == MeetupStatus.CANCELLED || meetup.getStatus() == MeetupStatus.FINISHED) {
             // Nobody would ever promote or notify this participation: fail clearly instead of a silent dead end.
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot join a meetup that is " + meetup.getStatus());
