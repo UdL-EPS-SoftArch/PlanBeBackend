@@ -134,30 +134,26 @@ public class JoinMeetupStepDefs {
 
     @Then("the participation status is {string}")
     public void the_participation_status_is(String status) {
-        try {
-            // Try to check response body; if empty or no value, look up in DB
-            String content = stepDefs.result.andReturn().getResponse().getContentAsString();
-            if (content != null && !content.trim().isEmpty() && content.contains("status")) {
-                stepDefs.result.andExpect(jsonPath("$.status").value(status));
-            } else {
-                // fallback: no easy way - just pass if 2xx; not ideal
-            }
-        } catch (Exception e) {
-            // ignore
+        // We verify the status directly in the database (DatabaseCleanupHooks guarantees one meetup per user1
+        // scenario). A user who left and joined again keeps the old row, so the current one is the latest.
+        Participation p = participationRepository.findAll().stream()
+            .filter(participation -> participation.getParticipant().getId().equals("user1"))
+            .max(java.util.Comparator.comparing(Participation::getId))
+            .orElseThrow(() -> new RuntimeException("No participation found for user1 to verify status"));
+
+        if (!p.getStatus().name().equals(status)) {
+            throw new AssertionError("Expected status " + status + " but was " + p.getStatus().name());
         }
     }
 
     @Then("my earlier participation in the meetup {string} is kept as {string}")
     public void my_earlier_participation_in_the_meetup_is_kept_as(String title, String status) {
-        try {
-            Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-            Optional<Participation> p = participationRepository.findByParticipantIdAndMeetupId("user1", meetup.getId());
-            if (p.isEmpty()) throw new AssertionError("Participation not found");
-            if (!status.equals(p.get().getStatus().name())) throw new AssertionError("Expected " + status + " but got " + p.get().getStatus());
-        } catch (AssertionError ae) {
-            throw ae;
-        } catch (Exception e) {
-            throw new AssertionError(e);
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        java.util.List<Participation> history =
+            participationRepository.findByParticipantIdAndMeetupIdOrderByIdAsc("user1", meetup.getId());
+        if (history.size() != 2 || !history.get(0).getStatus().name().equals(status)) {
+            throw new AssertionError("Expected 2 participations, the first one " + status + ", but got "
+                + history.stream().map(p -> p.getStatus().name()).toList());
         }
     }
 
@@ -167,19 +163,18 @@ public class JoinMeetupStepDefs {
     public void theMeetupIsCancelled(String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
         meetup.setStatus(Meetup.MeetupStatus.CANCELLED);
-        meetupRepository.save(meetup);
+        RunAs.admin(() -> meetupRepository.save(meetup));
     }
 
     @When("the organizer cancels the meetup {string}")
     public void theOrganizerCancelsTheMeetup(String title) throws Exception {
-        if (this.mockMvc == null) setup();
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        ensureUser("user1");
+        String organizer = meetup.getOrganizer().getId();
 
         String body = "{\"status\": \"CANCELLED\"}";
 
-        this.result = mockMvc.perform(MockMvcRequestBuilders.patch("/meetups/" + meetup.getId())
-                .with(SecurityMockMvcRequestPostProcessors.user("user1"))
+        stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.patch("/meetups/" + meetup.getId())
+                .with(SecurityMockMvcRequestPostProcessors.user(organizer))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
     }

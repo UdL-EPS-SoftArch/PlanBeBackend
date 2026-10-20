@@ -7,7 +7,9 @@ import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
+import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
+import org.springframework.data.rest.core.annotation.HandleBeforeCreate;
 import org.springframework.data.rest.core.annotation.HandleBeforeDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkDelete;
 import org.springframework.data.rest.core.annotation.HandleBeforeLinkSave;
@@ -41,12 +43,23 @@ public class MeetupEventHandler {
     private final ParticipationRepository participationRepository;
     private final Notifier notifier;
     private final WaitingList waitingList;
+    private final UserRepository userRepository;
 
     public MeetupEventHandler(ParticipationRepository participationRepository, Notifier notifier,
-                              WaitingList waitingList) {
+                              WaitingList waitingList, UserRepository userRepository) {
         this.participationRepository = participationRepository;
         this.notifier = notifier;
         this.waitingList = waitingList;
+        this.userRepository = userRepository;
+    }
+
+    @HandleBeforeCreate
+    public void handleMeetupPreCreate(Meetup meetup) {
+        // The organizer is always the authenticated user, whatever the request body says.
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User organizer = userRepository.findById(username)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        meetup.setOrganizer(organizer);
     }
 
     @HandleBeforeSave

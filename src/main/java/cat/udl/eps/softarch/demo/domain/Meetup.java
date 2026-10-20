@@ -1,8 +1,16 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+import cat.udl.eps.softarch.demo.domain.enums.Category;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -11,6 +19,7 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Entity
@@ -26,21 +35,27 @@ public class Meetup extends UriEntity<Long> {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @NotBlank
     @Column(nullable = false)
     private String title;
 
     private String description;
 
+    @NotNull
+    @Min(1)
     @Column(nullable = false)
     private Integer capacity;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Visibility visibility;
+    private Category category;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private MeetupStatus status;
+    private Visibility visibility = Visibility.PUBLIC;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MeetupStatus status = MeetupStatus.OPEN;
 
     @ManyToOne
     @JoinColumn(name = "organizer_id")
@@ -50,10 +65,19 @@ public class Meetup extends UriEntity<Long> {
 
     private Integer maxAge;
 
-    // Same names/types as branch 9-épica-quedadas-meetup (#23) so both merge cleanly.
-    // Nullable on purpose: validations (@NotNull, @Future, endDate > startDate) belong to #23.
+    @Enumerated(EnumType.STRING)
+    private Gender targetGender;
+
+    @DecimalMin("0.0")
+    private BigDecimal price;
+
+    // Validated at the REST boundary only (jakarta.persistence.validation.mode: none), so internal saves
+    // of meetups without dates (e.g. test fixtures, WaitingList status updates) are not rejected.
+    @NotNull
+    @Future
     private Instant startDate;
 
+    @NotNull
     private Instant endDate;
 
     @Valid
@@ -90,6 +114,20 @@ public class Meetup extends UriEntity<Long> {
             location.getAddress(), location.getCity(), location.getLatitude(), location.getLongitude());
         loadedState = new LoadedState(status, capacity, startDate, endDate, locationCopy,
             organizer == null ? null : organizer.getId());
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = "endDate must be after startDate")
+    public boolean isEndDateAfterStartDate() {
+        if (startDate == null || endDate == null) return true;
+        return endDate.isAfter(startDate);
+    }
+
+    @JsonIgnore
+    @AssertTrue(message = "minAge must be less than or equal to maxAge")
+    public boolean isAgeRangeValid() {
+        if (minAge == null || maxAge == null) return true;
+        return minAge <= maxAge;
     }
 
     /** @return the persisted state, or null if this instance was not loaded from the database. */

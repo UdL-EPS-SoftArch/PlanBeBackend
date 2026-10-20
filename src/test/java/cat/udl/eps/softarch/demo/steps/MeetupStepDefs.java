@@ -49,6 +49,7 @@ public class MeetupStepDefs {
         if (details.containsKey("title")) body.put("title", details.get("title"));
         if (details.containsKey("description")) body.put("description", details.get("description"));
         if (details.containsKey("capacity")) body.put("capacity", Integer.parseInt(details.get("capacity")));
+        else body.put("capacity", 10);
         if (details.containsKey("startDate")) body.put("startDate", details.get("startDate"));
         else body.put("startDate", Instant.now().plusSeconds(3600).toString());
         if (details.containsKey("endDate")) body.put("endDate", details.get("endDate"));
