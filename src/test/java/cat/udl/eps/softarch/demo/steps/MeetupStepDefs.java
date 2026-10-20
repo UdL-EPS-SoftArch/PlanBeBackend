@@ -12,8 +12,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.*;
 import java.time.Instant;
-import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
-import cat.udl.eps.softarch.demo.domain.enums.MeetupVisibility;
+import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -101,6 +101,8 @@ public class MeetupStepDefs {
             meetup.setStartDate(Instant.now().plusSeconds(3600));
             meetup.setEndDate(Instant.now().plusSeconds(7200));
             meetup.setCapacity(10);
+            meetup.setVisibility(Visibility.PUBLIC);
+            meetup.setStatus(MeetupStatus.OPEN);
             meetupRepository.save(meetup);
         } finally {
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
@@ -205,9 +207,14 @@ public class MeetupStepDefs {
                 meetup.setStartDate(row.containsKey("startDate") ? Instant.parse(row.get("startDate")) : Instant.now().plusSeconds(3600));
                 meetup.setEndDate(row.containsKey("endDate") ? Instant.parse(row.get("endDate")) : Instant.now().plusSeconds(7200));
                 meetup.setCapacity(row.containsKey("capacity") ? Integer.parseInt(row.get("capacity")) : 10);
-                if (row.containsKey("category")) meetup.setCategory(cat.udl.eps.softarch.demo.domain.enums.Category.valueOf(row.get("category")));
-                if (row.containsKey("visibility")) meetup.setVisibility(MeetupVisibility.valueOf(row.get("visibility")));
-                if (row.containsKey("status")) meetup.setStatus(MeetupStatus.valueOf(row.get("status")));
+                if (row.containsKey("visibility")) meetup.setVisibility(Visibility.valueOf(row.get("visibility")));
+                meetup.setStatus(row.containsKey("status") ? MeetupStatus.valueOf(row.get("status")) : MeetupStatus.OPEN);
+                if (row.containsKey("category")) {
+                    try {
+                        meetup.setCategory(cat.udl.eps.softarch.demo.domain.enums.Category.valueOf(row.get("category")));
+                    } catch (Exception e) {
+                    }
+                }
                 if (row.containsKey("city")) {
                     Location loc = new Location();
                     loc.setCity(row.get("city"));
@@ -323,7 +330,8 @@ public class MeetupStepDefs {
             meetup.setStartDate(Instant.now().plusSeconds(3600));
             meetup.setEndDate(Instant.now().plusSeconds(7200));
             meetup.setCapacity(10);
-            meetup.setVisibility(MeetupVisibility.valueOf(visibility));
+            meetup.setVisibility(Visibility.valueOf(visibility));
+            meetup.setStatus(MeetupStatus.OPEN);
             meetupRepository.save(meetup);
         } finally {
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
@@ -351,7 +359,8 @@ public class MeetupStepDefs {
             meetup.setStartDate(Instant.now().plusSeconds(3600));
             meetup.setEndDate(Instant.now().plusSeconds(7200));
             meetup.setCapacity(10);
-            meetup.setVisibility(MeetupVisibility.valueOf(visibility));
+            meetup.setVisibility(Visibility.valueOf(visibility));
+            meetup.setStatus(MeetupStatus.OPEN);
             meetupRepository.save(meetup);
         } finally {
             org.springframework.security.core.context.SecurityContextHolder.clearContext();
@@ -398,3 +407,4 @@ public class MeetupStepDefs {
                 .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(stepDefs.currentUser).roles("USER")));
     }
 }
+

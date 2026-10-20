@@ -1,5 +1,6 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
@@ -11,7 +12,26 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
 
+import cat.udl.eps.softarch.demo.domain.enums.Category;
+import cat.udl.eps.softarch.demo.domain.enums.Gender;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Table;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.*;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.DynamicUpdate;
+
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "Meetup")
@@ -33,6 +53,9 @@ public class Meetup extends UriEntity<Long> {
 
     @Column(nullable = false)
     private Integer capacity;
+
+    @Enumerated(EnumType.STRING)
+    private Category category;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

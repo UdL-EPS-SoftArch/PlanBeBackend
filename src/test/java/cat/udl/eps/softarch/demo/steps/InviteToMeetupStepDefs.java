@@ -4,8 +4,8 @@ import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.User;
-import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
-import cat.udl.eps.softarch.demo.domain.enums.MeetupVisibility;
+import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -45,7 +45,7 @@ public class InviteToMeetupStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle(title);
         meetup.setCapacity(10);
-        meetup.setVisibility(MeetupVisibility.PRIVATE);
+        meetup.setVisibility(Visibility.PRIVATE);
         meetup.setStatus(MeetupStatus.OPEN);
         meetup.setOrganizer(userRepository.findById(organizerUsername).orElseThrow());
 

@@ -69,7 +69,7 @@ public class ParticipationEventHandler {
 
         // Handle visibility: if meetup is PRIVATE, throw 403 Forbidden
         if (meetup.getVisibility() == Meetup.Visibility.PRIVATE) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot join private meetup without invitation");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot join private meetup without invitation");
         }
 
         if (meetup.getStatus() == MeetupStatus.CANCELLED || meetup.getStatus() == MeetupStatus.FINISHED) {

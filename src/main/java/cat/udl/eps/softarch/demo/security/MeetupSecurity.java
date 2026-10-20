@@ -1,7 +1,7 @@
 package cat.udl.eps.softarch.demo.security;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.enums.MeetupVisibility;
+import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -27,7 +27,7 @@ public class MeetupSecurity {
         if (username != null && meetupRepository.findByIdAndOwner(id, username).isPresent()) return true;
 
         return meetupRepository.findByIdRaw(id)
-                .map(meetup -> meetup.getVisibility() == MeetupVisibility.PUBLIC)
+                .map(meetup -> meetup.getVisibility() == Visibility.PUBLIC)
                 .orElse(false);
     }
 
