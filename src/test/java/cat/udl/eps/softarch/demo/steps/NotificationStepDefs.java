@@ -75,6 +75,10 @@ public class NotificationStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle(title);
         meetup.setCapacity(capacity);
+        // Valid dates: PATCH /meetups validates the whole meetup (dates required, end after start), and
+        // "Change date" moves the start to 2030-05-01.
+        meetup.setStartDate(Instant.now().plus(java.time.Duration.ofDays(1)));
+        meetup.setEndDate(Instant.parse("2031-01-01T00:00:00Z"));
         meetup.setVisibility(Meetup.Visibility.PUBLIC);
         meetup.setStatus(Meetup.MeetupStatus.OPEN);
         meetup.setOrganizer(userRepository.findById(organizerUsername).orElseThrow());

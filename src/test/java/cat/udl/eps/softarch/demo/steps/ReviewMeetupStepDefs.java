@@ -50,11 +50,11 @@ public class ReviewMeetupStepDefs {
         meetup.setVisibility(Meetup.Visibility.PUBLIC);
         meetup.setStatus(Meetup.MeetupStatus.valueOf(status));
         meetup.setOrganizer(participant);
-        meetup = meetupRepository.save(meetup);
+        Meetup saved = RunAs.admin(() -> meetupRepository.save(meetup));
 
         Participation participation = new Participation();
         participation.setParticipant(participant);
-        participation.setMeetup(meetup);
+        participation.setMeetup(saved);
         participation.setStatus(ParticipationStatus.CONFIRMED);
         participation.setJoinedAt(Instant.now());
         participationRepository.save(participation);
@@ -70,7 +70,7 @@ public class ReviewMeetupStepDefs {
         review.setText("Existing review");
         review.setReviewer(reviewer);
         review.setMeetup(meetup);
-        reviewRepository.save(review);
+        RunAs.admin(() -> reviewRepository.save(review));
     }
 
     @When("I review the meetup {string} with rating {int} and text {string}")
