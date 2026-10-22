@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.repository;
 
 import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.InvitationStatus;
+import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -12,6 +13,7 @@ import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @RepositoryRestResource
@@ -45,4 +47,9 @@ public interface InvitationRepository extends CrudRepository<Invitation, Long>, 
     // Used by MeetupSecurity: invitees see the private meetups they are invited to
     @RestResource(exported = false)
     boolean existsByMeetupIdAndInviteeIdAndStatusIn(Long meetupId, String inviteeId, Collection<InvitationStatus> statuses);
+
+    // Used by BlockEventHandler (#48): invitations of a user to the meetups of a given organizer
+    @RestResource(exported = false)
+    List<Invitation> findByInviteeIdAndMeetupOrganizerIdAndStatusInAndMeetupStatusIn(String inviteeId,
+        String organizerId, Collection<InvitationStatus> statuses, Collection<MeetupStatus> meetupStatuses);
 }
