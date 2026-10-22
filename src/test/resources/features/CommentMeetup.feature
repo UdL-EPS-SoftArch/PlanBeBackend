@@ -79,3 +79,22 @@ Feature: Comment a meetup
     When I delete the comment "My comment" on the meetup "Public Picnic"
     Then The response code is 204
     And The meetup "Public Picnic" has 0 comments
+
+  Scenario: Outsider cannot delete a comment of a private meetup
+    Given a meetup "Secret Picnic" exists created by "organizer" with visibility "PRIVATE"
+    And "guest" is a confirmed participant of the meetup "Secret Picnic"
+    And "guest" has already commented "See you there" on the meetup "Secret Picnic"
+    And I login as "outsider" with password "password"
+    When I delete the comment "See you there" on the meetup "Secret Picnic"
+    Then The response code is 404
+    And The meetup "Secret Picnic" has 1 comment
+
+  Scenario: Participant cannot delete another user's comment
+    Given a meetup "Secret Picnic" exists created by "organizer" with visibility "PRIVATE"
+    And "guest" is a confirmed participant of the meetup "Secret Picnic"
+    And "author" is a confirmed participant of the meetup "Secret Picnic"
+    And "guest" has already commented "See you there" on the meetup "Secret Picnic"
+    And I login as "author" with password "password"
+    When I delete the comment "See you there" on the meetup "Secret Picnic"
+    Then The response code is 403
+    And The meetup "Secret Picnic" has 1 comment
