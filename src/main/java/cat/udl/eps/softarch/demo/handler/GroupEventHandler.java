@@ -34,6 +34,7 @@ public class GroupEventHandler {
     @HandleBeforeSave
     public void handleGroupPreSave(Group group) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assert authentication != null;
         User current = (User) authentication.getPrincipal();
         User persistedOwner = persistedOwner(group);
 
@@ -49,6 +50,7 @@ public class GroupEventHandler {
     @HandleBeforeDelete
     public void handleGroupPreDelete(Group group) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assert authentication != null;
         assertCanManage(authentication, persistedOwner(group), "delete");
     }
 
