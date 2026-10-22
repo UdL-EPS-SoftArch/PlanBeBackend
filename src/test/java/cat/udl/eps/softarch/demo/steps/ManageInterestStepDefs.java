@@ -1,6 +1,8 @@
 package cat.udl.eps.softarch.demo.steps;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -46,6 +48,23 @@ public class ManageInterestStepDefs {
                 .accept(MediaType.APPLICATION_JSON)
                 .with(AuthenticationStepDefs.authenticate()))
         .andDo(print());
+  }
+
+  @When("I create an interest named {string} in the category {string}")
+  public void iCreateAnInterestNamedInTheCategory(String name, String category) throws Throwable {
+    stepDefs.result = stepDefs.mockMvc.perform(
+            post("/interests")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(stepDefs.mapper.writeValueAsString(Map.of("name", name, "category", category)))
+                .characterEncoding(StandardCharsets.UTF_8)
+                .accept(MediaType.APPLICATION_JSON)
+                .with(AuthenticationStepDefs.authenticate()))
+        .andDo(print());
+  }
+
+  @And("The interest {string} has the category {string}")
+  public void theInterestHasTheCategory(String name, String category) {
+    assertThat(interestRepository.findByName(name).orElseThrow().getCategory().name(), is(category));
   }
 
   @When("I list the interests")

@@ -35,6 +35,7 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/interests", "/interests/**").permitAll()
                 .requestMatchers("/interests", "/interests/**").hasRole("ADMIN")
                 .requestMatchers("/invitations", "/invitations/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/meetups/search/recommended").authenticated()
                 .requestMatchers("/blocks", "/blocks/**").authenticated()
                 // Any user creates and lists their reports; only an ADMIN changes or deletes them (#50)
                 .requestMatchers(HttpMethod.PATCH, "/reports/*").hasRole("ADMIN")
