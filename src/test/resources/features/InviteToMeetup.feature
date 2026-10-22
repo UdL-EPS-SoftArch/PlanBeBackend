@@ -114,3 +114,9 @@ Feature: Invite to Meetup
     When I move the invitation of "guest" to the meetup "Team Dinner" to the meetup "Small Dinner"
     Then The response code is 403
     And There is no invitation of "guest" to the meetup "Small Dinner"
+
+  Scenario: Unrelated user cannot look up an invitation through the search endpoints
+    Given "guest" has already been invited to the meetup "Team Dinner"
+    And I login as "another" with password "password"
+    When I look up the invitation of "guest" to the meetup "Team Dinner" through the search endpoint
+    Then The response code is 404
