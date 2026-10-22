@@ -6,6 +6,7 @@ import cat.udl.eps.softarch.demo.domain.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.repository.BlockRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -44,13 +45,15 @@ public class ParticipationEventHandler {
     private final UserRepository userRepository;
     private final WaitingList waitingList;
     private final Notifier notifier;
+    private final BlockRepository blockRepository;
 
     public ParticipationEventHandler(ParticipationRepository participationRepository, UserRepository userRepository,
-                                     WaitingList waitingList, Notifier notifier) {
+                                     WaitingList waitingList, Notifier notifier, BlockRepository blockRepository) {
         this.participationRepository = participationRepository;
         this.userRepository = userRepository;
         this.waitingList = waitingList;
         this.notifier = notifier;
+        this.blockRepository = blockRepository;
     }
 
     @HandleBeforeCreate
@@ -66,6 +69,12 @@ public class ParticipationEventHandler {
         User user = userRepository.findById(currentUsername)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         participation.setParticipant(user);
+
+        // #48: a user blocked by the organizer cannot join their meetups
+        if (meetup.getOrganizer() != null
+                && blockRepository.existsByBlockerIdAndBlockedId(meetup.getOrganizer().getId(), user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The organizer of this meetup has blocked you");
+        }
 
         // Handle visibility: if meetup is PRIVATE, throw 403 Forbidden
         if (meetup.getVisibility() == Meetup.Visibility.PRIVATE) {
@@ -112,6 +121,15 @@ public class ParticipationEventHandler {
 
     @HandleAfterCreate
     public void handleAfterCreate(Participation participation) {
+        // #48: the organizer blocked this user while the join was in progress, after the check above but before
+        // this row existed, so BlockEventHandler could not cancel it. Cancel it here and refuse the join.
+        Meetup meetup = participation.getMeetup();
+        if (meetup.getOrganizer() != null && blockRepository.existsByBlockerIdAndBlockedId(
+                meetup.getOrganizer().getId(), participation.getParticipant().getId())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The organizer of this meetup has blocked you");
+        }
         // The joining user is not sent SPOT_FREED for the spot they get when joining.
         waitingList.fillFreeSpots(participation.getMeetup().getId(), participation.getParticipant().getId());
         // Answer with the status stored in the database (a scalar query, never a cached instance).
