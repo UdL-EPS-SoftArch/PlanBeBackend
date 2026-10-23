@@ -2,6 +2,9 @@
 
 Backend de **PlanBe**, una plataforma para crear, descubrir y unirse a quedadas entre personas y grupos.
 
+[![Open Issues](https://img.shields.io/github/issues-raw/UdL-EPS-SoftArch/PlanBeBackend?logo=github)](https://github.com/UdL-EPS-SoftArch/PlanBeBackend/issues)
+[![CI/CD](https://github.com/UdL-EPS-SoftArch/PlanBeBackend/actions/workflows/maven.yml/badge.svg)](https://github.com/UdL-EPS-SoftArch/PlanBeBackend/actions/workflows/maven.yml)
+
 ## Visión
 PlanBe propone un backend REST (HAL) para gestionar planes sociales con reglas de visibilidad, participación, moderación y recomendaciones personalizadas, siguiendo un enfoque SDD (Spec-Driven Development) con Cucumber.
 
