@@ -6,6 +6,7 @@ import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.MembershipRepository;
 import cat.udl.eps.softarch.demo.repository.NotificationRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
+import cat.udl.eps.softarch.demo.repository.ReportRepository;
 import io.cucumber.java.Before;
 
 /**

@@ -20,7 +20,7 @@ Feature: Join and Leave a Public Meetup
     And the meetup "Full Event" is already full
     When I join the meetup "Full Event"
     Then the response code is 201
-    And the participation status is "WAITING"
+    And the participation status is "WAITING" 
 
   Scenario: User cannot join twice
     Given I am logged in as "user1"

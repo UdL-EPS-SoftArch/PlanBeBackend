@@ -13,6 +13,12 @@ Feature: Manage Interest
     Then The response code is 201
     And There is an interest named "Hiking" in the catalogue
 
+  Scenario: Admin creates an interest with a category
+    Given I login as "admin" with password "password"
+    When I create an interest named "Hiking" in the category "SPORTS"
+    Then The response code is 201
+    And The interest "Hiking" has the category "SPORTS"
+
   Scenario: User cannot create an interest
     Given I login as "user" with password "password"
     When I create an interest named "Hiking"

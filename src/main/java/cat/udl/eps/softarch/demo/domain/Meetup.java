@@ -23,6 +23,8 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "Meetup")
@@ -93,6 +95,13 @@ public class Meetup extends UriEntity<Long> {
     @Valid
     @Embedded
     private Location location;
+
+    /** Interests of the meetup, matched against the user's interests for recommendations (#46). */
+    @ManyToMany
+    @JsonIdentityReference(alwaysAsId = true)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Set<Interest> tags = new HashSet<>();
 
     /** State as loaded from the database, used by MeetupEventHandler to detect changes. */
     @Transient
