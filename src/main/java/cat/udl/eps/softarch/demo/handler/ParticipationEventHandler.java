@@ -131,9 +131,17 @@ public class ParticipationEventHandler {
         participation.setJoinedAt(Instant.now());
     }
 
-
     @HandleAfterCreate
     public void handleAfterCreate(Participation participation) {
+        // #48: the organizer blocked this user while the join was in progress, after the check above but before
+        // this row existed, so BlockEventHandler could not cancel it. Cancel it here and refuse the join.
+        Meetup meetup = participation.getMeetup();
+        if (meetup.getOrganizer() != null && blockRepository.existsByBlockerIdAndBlockedId(
+                meetup.getOrganizer().getId(), participation.getParticipant().getId())) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The organizer of this meetup has blocked you");
+        }
         // The joining user is not sent SPOT_FREED for the spot they get when joining.
         waitingList.fillFreeSpots(participation.getMeetup().getId(), participation.getParticipant().getId());
         // Answer with the status stored in the database (a scalar query, never a cached instance).
