@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
 import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+import cat.udl.eps.softarch.demo.domain.enums.Category;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -20,4 +21,8 @@ public class Interest extends UriEntity<Long> {
     @Length(max = 50)
     @Column(unique = true)
     private String name;
+
+    /** Optional: meetups of this category are recommended to users with this interest (#46). */
+    @Enumerated(EnumType.STRING)
+    private Category category;
 }

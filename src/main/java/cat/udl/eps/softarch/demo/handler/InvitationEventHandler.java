@@ -7,6 +7,7 @@ import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.repository.BlockRepository;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -31,14 +32,17 @@ public class InvitationEventHandler {
     final ParticipationRepository participationRepository;
     final WaitingList waitingList;
     final Notifier notifier;
+    final BlockRepository blockRepository;
 
     public InvitationEventHandler(InvitationRepository invitationRepository, UserRepository userRepository,
-        ParticipationRepository participationRepository, WaitingList waitingList, Notifier notifier) {
+        ParticipationRepository participationRepository, WaitingList waitingList, Notifier notifier,
+        BlockRepository blockRepository) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
         this.participationRepository = participationRepository;
         this.waitingList = waitingList;
         this.notifier = notifier;
+        this.blockRepository = blockRepository;
     }
 
     @HandleBeforeCreate
@@ -54,6 +58,15 @@ public class InvitationEventHandler {
 
         if (meetup.getOrganizer() == null || !meetup.getOrganizer().getId().equals(inviter.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the meetup organizer can send invitations");
+        }
+
+        // #48: a blocked user cannot invite the user who blocked them
+        if (blockRepository.existsByBlockerIdAndBlockedId(invitation.getInvitee().getId(), inviter.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot invite a user who has blocked you");
+        }
+        // ...and the blocker cannot send an invitation that the blocked user would never be allowed to accept
+        if (blockRepository.existsByBlockerIdAndBlockedId(inviter.getId(), invitation.getInvitee().getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot invite a user you have blocked");
         }
 
         if (isClosed(meetup)) {
@@ -101,6 +114,13 @@ public class InvitationEventHandler {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invitation must be ACCEPTED or DECLINED");
         }
 
+        // #48: blocked after being invited: accepting would join the blocker's meetup
+        User organizer = invitation.getMeetup().getOrganizer();
+        if (invitation.getStatus() == InvitationStatus.ACCEPTED && organizer != null
+                && blockRepository.existsByBlockerIdAndBlockedId(organizer.getId(), currentUsername)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The organizer of this meetup has blocked you");
+        }
+
         if (invitation.getStatus() == InvitationStatus.ACCEPTED && isClosed(invitation.getMeetup())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot accept an invitation to a cancelled or finished meetup");
         }
@@ -127,6 +147,13 @@ public class InvitationEventHandler {
         participation.setStatus(ParticipationStatus.WAITING);
         participation.setJoinedAt(Instant.now());
         participationRepository.save(participation);
+        // #48: blocked by the organizer while accepting (after the check in handleInvitationPreSave)
+        if (meetup.getOrganizer() != null
+                && blockRepository.existsByBlockerIdAndBlockedId(meetup.getOrganizer().getId(), inviteeId)) {
+            participation.setStatus(ParticipationStatus.CANCELLED);
+            participationRepository.save(participation);
+            return;
+        }
         waitingList.fillFreeSpots(meetup.getId(), inviteeId);
     }
 

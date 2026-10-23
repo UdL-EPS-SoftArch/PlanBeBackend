@@ -1,5 +1,6 @@
 package cat.udl.eps.softarch.demo.repository;
 
+import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -46,6 +47,11 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
 
     @RestResource(exported = false)
     List<Participation> findByParticipantIdAndMeetupIdOrderByIdAsc(String participantId, Long meetupId);
+
+    // Used by BlockEventHandler (#48): participations of a user in the meetups of a given organizer
+    @RestResource(exported = false)
+    List<Participation> findByParticipantIdAndMeetupOrganizerIdAndStatusInAndMeetupStatusIn(String participantId,
+        String organizerId, Collection<ParticipationStatus> statuses, Collection<MeetupStatus> meetupStatuses);
 
     @RestResource(exported = false)
     @Query("select p.status from Participation p where p.id = ?1")

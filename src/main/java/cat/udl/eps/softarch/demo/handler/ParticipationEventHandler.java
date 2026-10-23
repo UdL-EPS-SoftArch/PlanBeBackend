@@ -8,6 +8,7 @@ import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.repository.BlockRepository;
 import cat.udl.eps.softarch.demo.repository.MembershipRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -48,14 +49,17 @@ public class ParticipationEventHandler {
     private final WaitingList waitingList;
     private final Notifier notifier;
     private final MembershipRepository membershipRepository;
+    private final BlockRepository blockRepository;
 
     public ParticipationEventHandler(ParticipationRepository participationRepository, UserRepository userRepository,
                                      WaitingList waitingList, Notifier notifier,
-                                     MembershipRepository membershipRepository) {
+                                     MembershipRepository membershipRepository,
+                                      BlockRepository blockRepository) {
         this.participationRepository = participationRepository;
         this.userRepository = userRepository;
         this.waitingList = waitingList;
         this.notifier = notifier;
+        this.blockRepository = blockRepository;
         this.membershipRepository = membershipRepository;
     }
 
@@ -72,6 +76,12 @@ public class ParticipationEventHandler {
         User user = userRepository.findById(currentUsername)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         participation.setParticipant(user);
+
+        // #48: a user blocked by the organizer cannot join their meetups
+        if (meetup.getOrganizer() != null
+                && blockRepository.existsByBlockerIdAndBlockedId(meetup.getOrganizer().getId(), user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The organizer of this meetup has blocked you");
+        }
 
         // Handle visibility: if meetup is PRIVATE, throw 403 Forbidden
         if (meetup.getVisibility() == Meetup.Visibility.PRIVATE) {
@@ -120,6 +130,7 @@ public class ParticipationEventHandler {
         participation.setStatus(ParticipationStatus.WAITING);
         participation.setJoinedAt(Instant.now());
     }
+
 
     @HandleAfterCreate
     public void handleAfterCreate(Participation participation) {
@@ -209,21 +220,22 @@ public class ParticipationEventHandler {
         }
     }
 
-    private static boolean isAdmin() {
-        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
-            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
-    }
-
     /**
-     * The owner of the group is its first member even before a Membership row is created; everybody else
-     * needs an ACTIVE membership. A PENDING join request grants no access yet (RF-5.3, RF-5.4).
+     * RF-5.4: only the active members of the group join its GROUP meetups. Mirrors
+     * MeetupSecurity#isActiveGroupMember, which is private and takes a username; here the User is
+     * already loaded and the membership query is the same.
      */
     private boolean isActiveGroupMember(Group group, User user) {
-        if (group == null || group.getId() == null) return false;
+        if (group == null || group.getId() == null || user == null || user.getId() == null) return false;
         if (group.getOwnedBy() != null && user.getId().equals(group.getOwnedBy().getId())) return true;
         return membershipRepository.findByGroupIdAndMemberId(group.getId(), user.getId())
             .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
             .isPresent();
+    }
+
+    private static boolean isAdmin() {
+        return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
+            .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
     }
 
     private Participation.LoadedState checkCanModify(Participation participation) {

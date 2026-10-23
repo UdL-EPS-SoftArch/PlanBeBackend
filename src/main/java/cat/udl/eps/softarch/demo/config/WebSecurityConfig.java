@@ -35,6 +35,13 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/interests", "/interests/**").permitAll()
                 .requestMatchers("/interests", "/interests/**").hasRole("ADMIN")
                 .requestMatchers("/invitations", "/invitations/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/meetups/search/recommended").authenticated()
+                .requestMatchers("/blocks", "/blocks/**").authenticated()
+                // Any user creates and lists their reports; only an ADMIN changes or deletes them (#50)
+                .requestMatchers(HttpMethod.PATCH, "/reports/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.PUT, "/reports/*").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.DELETE, "/reports/*").hasRole("ADMIN")
+                .requestMatchers("/reports", "/reports/**").authenticated()
                 // Notifications are created by the handlers only: users can list/read them and PATCH the read flag
                 .requestMatchers(HttpMethod.GET, "/notifications", "/notifications/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/notifications/*").authenticated()
