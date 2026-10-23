@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.domain;
 import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
 import cat.udl.eps.softarch.demo.domain.enums.Gender;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
@@ -61,6 +62,14 @@ public class Meetup extends UriEntity<Long> {
     @ManyToOne
     @JoinColumn(name = "organizer_id")
     private User organizer;
+
+    /**
+     * RF-5.4: the group that owns a GROUP meetup. Null for PUBLIC and PRIVATE meetups.
+     */
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    @JsonIdentityReference(alwaysAsId = true)
+    private Group group;
   
     private Integer minAge;
 
@@ -103,7 +112,7 @@ public class Meetup extends UriEntity<Long> {
     }
 
     public record LoadedState(MeetupStatus status, Integer capacity, Instant startDate, Instant endDate,
-                              Location location, String organizerId) {}
+                              Location location, String organizerId, Long groupId) {}
 
     /**
      * Snapshot of the persisted state. Location is copied because a PATCH merges
@@ -114,7 +123,8 @@ public class Meetup extends UriEntity<Long> {
         Location locationCopy = location == null ? null : new Location(location.getName(),
             location.getAddress(), location.getCity(), location.getLatitude(), location.getLongitude());
         loadedState = new LoadedState(status, capacity, startDate, endDate, locationCopy,
-            organizer == null ? null : organizer.getId());
+            organizer == null ? null : organizer.getId(),
+            group == null ? null : group.getId());
     }
 
     @JsonIgnore

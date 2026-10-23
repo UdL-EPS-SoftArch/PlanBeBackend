@@ -1,11 +1,14 @@
 package cat.udl.eps.softarch.demo.handler;
 
+import cat.udl.eps.softarch.demo.domain.Group;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
 import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.repository.MembershipRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -44,13 +47,16 @@ public class ParticipationEventHandler {
     private final UserRepository userRepository;
     private final WaitingList waitingList;
     private final Notifier notifier;
+    private final MembershipRepository membershipRepository;
 
     public ParticipationEventHandler(ParticipationRepository participationRepository, UserRepository userRepository,
-                                     WaitingList waitingList, Notifier notifier) {
+                                     WaitingList waitingList, Notifier notifier,
+                                     MembershipRepository membershipRepository) {
         this.participationRepository = participationRepository;
         this.userRepository = userRepository;
         this.waitingList = waitingList;
         this.notifier = notifier;
+        this.membershipRepository = membershipRepository;
     }
 
     @HandleBeforeCreate
@@ -70,6 +76,11 @@ public class ParticipationEventHandler {
         // Handle visibility: if meetup is PRIVATE, throw 403 Forbidden
         if (meetup.getVisibility() == Meetup.Visibility.PRIVATE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot join private meetup without invitation");
+        }
+        // RF-5.4: only the active members of the group join its GROUP meetups.
+        if (meetup.getVisibility() == Meetup.Visibility.GROUP && !isActiveGroupMember(meetup.getGroup(), user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Cannot join a group meetup without being an active member of the group");
         }
 
         // Check age and gender restrictions
@@ -201,6 +212,18 @@ public class ParticipationEventHandler {
     private static boolean isAdmin() {
         return SecurityContextHolder.getContext().getAuthentication().getAuthorities().stream()
             .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
+    }
+
+    /**
+     * The owner of the group is its first member even before a Membership row is created; everybody else
+     * needs an ACTIVE membership. A PENDING join request grants no access yet (RF-5.3, RF-5.4).
+     */
+    private boolean isActiveGroupMember(Group group, User user) {
+        if (group == null || group.getId() == null) return false;
+        if (group.getOwnedBy() != null && user.getId().equals(group.getOwnedBy().getId())) return true;
+        return membershipRepository.findByGroupIdAndMemberId(group.getId(), user.getId())
+            .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
+            .isPresent();
     }
 
     private Participation.LoadedState checkCanModify(Participation participation) {

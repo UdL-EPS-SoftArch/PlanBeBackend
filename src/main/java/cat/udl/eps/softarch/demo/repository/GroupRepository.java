@@ -10,6 +10,7 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +33,11 @@ public interface GroupRepository extends CrudRepository<Group, Long>, PagingAndS
 
     @Query("SELECT g FROM Group g WHERE g.ownedBy = :user AND (" + OWNERSHIP_CLAUSE + ")")
     Page<Group> findByOwnedBy(@Param("user") User owner, Pageable pageable);
+
+    /** Internal use only: handlers must see the group regardless of who may read it. */
+    @RestResource(exported = false)
+    @Query("SELECT g FROM Group g WHERE g.id = :id")
+    Optional<Group> findByIdRaw(@Param("id") Long id);
 
     List<Group> findByName(String name);
 }
