@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 import org.springframework.data.rest.core.annotation.RestResource;
 
+import java.util.List;
 import java.util.Optional;
 
 @RepositoryRestResource
@@ -39,4 +40,15 @@ public interface MembershipRepository extends CrudRepository<Membership, Long>, 
     // Internal use only: who may read or change a membership is decided by MembershipEventHandler.
     @RestResource(exported = false)
     Optional<Membership> findByGroupIdAndMemberId(Long groupId, String memberId);
+
+    /**
+     * Internal use only (no SpEL, so never exported): the memberships that can manage a group, i.e. the
+     * ACTIVE rows with the OWNER or ADMIN role. Used to notify the group managers of a join request.
+     */
+    @RestResource(exported = false)
+    @Query("SELECT m FROM Membership m WHERE m.group.id = :groupId " +
+        "AND m.status = cat.udl.eps.softarch.demo.domain.MembershipStatus.ACTIVE " +
+        "AND m.role IN (cat.udl.eps.softarch.demo.domain.GroupRole.OWNER, " +
+        "cat.udl.eps.softarch.demo.domain.GroupRole.ADMIN)")
+    List<Membership> findActiveManagersByGroupId(@Param("groupId") Long groupId);
 }
