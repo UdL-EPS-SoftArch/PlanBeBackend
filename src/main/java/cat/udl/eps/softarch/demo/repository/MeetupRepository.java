@@ -70,4 +70,21 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
 
     @RestResource(exported = false)
     Optional<Meetup> findByTitle(String title);
+
+    /**
+     * #46: PUBLIC and OPEN meetups not started yet, in the user's city (case-insensitive) and matching one of the
+     * user's interests, either as a tag or through the interest's category. Excludes the meetups the user
+     * organizes or has already joined. Soonest first.
+     */
+    @Query("select m from Meetup m where m.visibility = 'PUBLIC' and m.status = 'OPEN' "
+        + "and m.startDate > current_timestamp "
+        + "and lower(m.location.city) = (select lower(u.city) from User u where u.id = ?#{authentication.name}) "
+        + "and exists (select i from User u join u.interests i where u.id = ?#{authentication.name} "
+        + "and (i member of m.tags or (i.category is not null and i.category = m.category))) "
+        + "and (m.organizer is null or m.organizer.id <> ?#{authentication.name}) "
+        + "and not exists (select p from Participation p where p.meetup = m and p.participant.id = ?#{authentication.name} "
+        + "and p.status in (cat.udl.eps.softarch.demo.domain.ParticipationStatus.CONFIRMED, "
+        + "cat.udl.eps.softarch.demo.domain.ParticipationStatus.WAITING)) "
+        + "order by m.startDate asc")
+    List<Meetup> recommended();
 }
