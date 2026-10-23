@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.domain;
 
 import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
+import cat.udl.eps.softarch.demo.domain.enums.Gender;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;

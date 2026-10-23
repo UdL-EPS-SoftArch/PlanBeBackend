@@ -4,7 +4,7 @@ import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.Location;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Notification;
-import cat.udl.eps.softarch.demo.domain.NotificationType;
+import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;

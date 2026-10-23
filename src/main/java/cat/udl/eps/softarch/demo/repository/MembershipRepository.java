@@ -47,7 +47,7 @@ public interface MembershipRepository extends CrudRepository<Membership, Long>, 
      */
     @RestResource(exported = false)
     @Query("SELECT m FROM Membership m WHERE m.group.id = :groupId " +
-        "AND m.status = cat.udl.eps.softarch.demo.domain.MembershipStatus.ACTIVE " +
+        "AND m.status = cat.udl.eps.softarch.demo.domain.enums.MembershipStatus.ACTIVE " +
         "AND m.role IN (cat.udl.eps.softarch.demo.domain.GroupRole.OWNER, " +
         "cat.udl.eps.softarch.demo.domain.GroupRole.ADMIN)")
     List<Membership> findActiveManagersByGroupId(@Param("groupId") Long groupId);
