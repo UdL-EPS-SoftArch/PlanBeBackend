@@ -6,6 +6,7 @@ import cat.udl.eps.softarch.demo.domain.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.springframework.data.rest.core.annotation.HandleAfterSave;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -44,13 +46,18 @@ public class MeetupEventHandler {
     private final Notifier notifier;
     private final WaitingList waitingList;
     private final UserRepository userRepository;
+    private final RecurringMeetups recurringMeetups;
+    private final MeetupRepository meetupRepository;
 
     public MeetupEventHandler(ParticipationRepository participationRepository, Notifier notifier,
-                              WaitingList waitingList, UserRepository userRepository) {
+                              WaitingList waitingList, UserRepository userRepository,
+                              RecurringMeetups recurringMeetups, MeetupRepository meetupRepository) {
         this.participationRepository = participationRepository;
         this.notifier = notifier;
         this.waitingList = waitingList;
         this.userRepository = userRepository;
+        this.recurringMeetups = recurringMeetups;
+        this.meetupRepository = meetupRepository;
     }
 
     @HandleBeforeCreate
@@ -60,16 +67,28 @@ public class MeetupEventHandler {
         User organizer = userRepository.findById(username)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         meetup.setOrganizer(organizer);
+        if (meetup.getStartDate() != null && !meetup.getStartDate().isAfter(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startDate must be a future date");
+        }
+        // #53: only RecurringMeetups links occurrences
+        meetup.setPreviousOccurrence(null);
     }
 
     @HandleBeforeSave
     public void handleMeetupPreSave(Meetup meetup) {
         checkOrganizerUnchangedAndCanModify(meetup);
+        Long previousId = meetup.getPreviousOccurrence() == null ? null : meetup.getPreviousOccurrence().getId();
+        if (!Objects.equals(meetupRepository.findStoredPreviousOccurrenceId(meetup.getId()), previousId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The previous occurrence cannot be changed");
+        }
     }
 
     @HandleBeforeLinkSave
     public void handleMeetupPreLinkSave(Meetup meetup, Object linked) {
         checkOrganizerUnchangedAndCanModify(meetup);
+        if (linked instanceof Meetup) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The previous occurrence cannot be changed");
+        }
     }
 
     @HandleBeforeLinkDelete
@@ -127,6 +146,10 @@ public class MeetupEventHandler {
             && (meetup.getStatus() == MeetupStatus.OPEN || meetup.getStatus() == MeetupStatus.FULL);
         if (!Objects.equals(before.capacity(), meetup.getCapacity()) || statusToOpenOrFull) {
             waitingList.fillFreeSpots(meetup.getId());
+        }
+        // #53: finishing an occurrence of a recurring meetup creates the next one
+        if (before.status() != MeetupStatus.FINISHED && meetup.getStatus() == MeetupStatus.FINISHED) {
+            recurringMeetups.createNextOccurrence(meetup);
         }
         // Already notified: a second save of this same instance must not notify again.
         meetup.captureLoadedState();

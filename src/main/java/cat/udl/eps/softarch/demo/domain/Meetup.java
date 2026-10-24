@@ -2,13 +2,14 @@ package cat.udl.eps.softarch.demo.domain;
 
 import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
+import cat.udl.eps.softarch.demo.domain.enums.Recurrence;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +23,8 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -76,8 +79,9 @@ public class Meetup extends UriEntity<Long> {
 
     // Validated at the REST boundary only (jakarta.persistence.validation.mode: none), so internal saves
     // of meetups without dates (e.g. test fixtures, WaitingList status updates) are not rejected.
+    // A future start is only required when creating (MeetupEventHandler): a meetup that already started
+    // must still be editable, e.g. to mark it FINISHED.
     @NotNull
-    @Future
     private Instant startDate;
 
     @NotNull
@@ -93,6 +97,19 @@ public class Meetup extends UriEntity<Long> {
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Set<Interest> tags = new HashSet<>();
+
+    /** How often the meetup repeats (#52). The last occurrence is the one starting on recurrenceEnd or before. */
+    @Enumerated(EnumType.STRING)
+    private Recurrence recurrence = Recurrence.NONE;
+
+    private LocalDate recurrenceEnd;
+
+    /** Occurrence this one was generated from when it was FINISHED (#53). Set by the system only. */
+    @ManyToOne
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Meetup previousOccurrence;
 
     /** State as loaded from the database, used by MeetupEventHandler to detect changes. */
     @Transient
@@ -134,6 +151,17 @@ public class Meetup extends UriEntity<Long> {
     }
 
     @JsonIgnore
+    @AssertTrue(message = "recurrenceEnd requires a recurrence")
+    public boolean isRecurrenceEndWithRecurrence() {
+        return recurrenceEnd == null || (recurrence != null && recurrence != Recurrence.NONE);
+    }
+
+    @AssertTrue(message = "recurrenceEnd must not be before the start date")
+    public boolean isRecurrenceEndAfterStartDate() {
+        if (recurrenceEnd == null || startDate == null) return true;
+        return !recurrenceEnd.isBefore(LocalDate.ofInstant(startDate, ZoneOffset.UTC));
+    }
+
     @AssertTrue(message = "minAge must be less than or equal to maxAge")
     public boolean isAgeRangeValid() {
         if (minAge == null || maxAge == null) return true;
