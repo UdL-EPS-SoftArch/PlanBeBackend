@@ -5,6 +5,7 @@ import cat.udl.eps.softarch.demo.domain.enums.Category;
 import cat.udl.eps.softarch.demo.domain.enums.Recurrence;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -102,6 +103,13 @@ public class Meetup extends UriEntity<Long> {
     private Recurrence recurrence = Recurrence.NONE;
 
     private LocalDate recurrenceEnd;
+
+    /** Occurrence this one was generated from when it was FINISHED (#53). Set by the system only. */
+    @ManyToOne
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Meetup previousOccurrence;
 
     /** State as loaded from the database, used by MeetupEventHandler to detect changes. */
     @Transient
