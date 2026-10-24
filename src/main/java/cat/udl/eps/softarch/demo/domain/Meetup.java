@@ -2,6 +2,7 @@ package cat.udl.eps.softarch.demo.domain;
 
 import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
+import cat.udl.eps.softarch.demo.domain.enums.Recurrence;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -22,6 +23,8 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -94,6 +97,12 @@ public class Meetup extends UriEntity<Long> {
     @EqualsAndHashCode.Exclude
     private Set<Interest> tags = new HashSet<>();
 
+    /** How often the meetup repeats (#52). The last occurrence is the one starting on recurrenceEnd or before. */
+    @Enumerated(EnumType.STRING)
+    private Recurrence recurrence = Recurrence.NONE;
+
+    private LocalDate recurrenceEnd;
+
     /** State as loaded from the database, used by MeetupEventHandler to detect changes. */
     @Transient
     @JsonIgnore
@@ -134,6 +143,17 @@ public class Meetup extends UriEntity<Long> {
     }
 
     @JsonIgnore
+    @AssertTrue(message = "recurrenceEnd requires a recurrence")
+    public boolean isRecurrenceEndWithRecurrence() {
+        return recurrenceEnd == null || (recurrence != null && recurrence != Recurrence.NONE);
+    }
+
+    @AssertTrue(message = "recurrenceEnd must not be before the start date")
+    public boolean isRecurrenceEndAfterStartDate() {
+        if (recurrenceEnd == null || startDate == null) return true;
+        return !recurrenceEnd.isBefore(LocalDate.ofInstant(startDate, ZoneOffset.UTC));
+    }
+
     @AssertTrue(message = "minAge must be less than or equal to maxAge")
     public boolean isAgeRangeValid() {
         if (minAge == null || maxAge == null) return true;
