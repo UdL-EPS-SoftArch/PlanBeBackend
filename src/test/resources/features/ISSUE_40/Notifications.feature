@@ -184,8 +184,6 @@ Feature: Notifications
     And User "guest" has no notifications
     And User "waiter" has no notifications
 
-  # Needs Group/Membership (#32, still open). Excluded from the run by the "not @pending" filter in CucumberTest.
-  @pending
   Scenario: Join request notifies the group admins
     Given There is a group "Climbers" administered by "organizer"
     And I login as "guest" with password "password"
