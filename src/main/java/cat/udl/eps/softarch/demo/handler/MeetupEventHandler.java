@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -60,6 +61,9 @@ public class MeetupEventHandler {
         User organizer = userRepository.findById(username)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         meetup.setOrganizer(organizer);
+        if (meetup.getStartDate() != null && !meetup.getStartDate().isAfter(Instant.now())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "startDate must be a future date");
+        }
     }
 
     @HandleBeforeSave

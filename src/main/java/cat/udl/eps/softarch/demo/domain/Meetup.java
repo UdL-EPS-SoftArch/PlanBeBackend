@@ -9,7 +9,6 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -79,8 +78,9 @@ public class Meetup extends UriEntity<Long> {
 
     // Validated at the REST boundary only (jakarta.persistence.validation.mode: none), so internal saves
     // of meetups without dates (e.g. test fixtures, WaitingList status updates) are not rejected.
+    // A future start is only required when creating (MeetupEventHandler): a meetup that already started
+    // must still be editable, e.g. to mark it FINISHED.
     @NotNull
-    @Future
     private Instant startDate;
 
     @NotNull
