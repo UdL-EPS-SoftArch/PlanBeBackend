@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.repository.BlockRepository;
+import cat.udl.eps.softarch.demo.repository.ChatMessageRepository;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.NotificationRepository;
@@ -19,16 +20,19 @@ public class DatabaseCleanupHooks {
     private final NotificationRepository notificationRepository;
     private final InvitationRepository invitationRepository;
     private final ParticipationRepository participationRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final MeetupRepository meetupRepository;
     private final BlockRepository blockRepository;
     private final ReportRepository reportRepository;
 
     public DatabaseCleanupHooks(NotificationRepository notificationRepository, InvitationRepository invitationRepository,
-                                ParticipationRepository participationRepository, MeetupRepository meetupRepository,
-                                BlockRepository blockRepository, ReportRepository reportRepository) {
+                                ParticipationRepository participationRepository, ChatMessageRepository chatMessageRepository,
+                                MeetupRepository meetupRepository, BlockRepository blockRepository,
+                                ReportRepository reportRepository) {
         this.notificationRepository = notificationRepository;
         this.invitationRepository = invitationRepository;
         this.participationRepository = participationRepository;
+        this.chatMessageRepository = chatMessageRepository;
         this.meetupRepository = meetupRepository;
         this.blockRepository = blockRepository;
         this.reportRepository = reportRepository;
@@ -38,6 +42,7 @@ public class DatabaseCleanupHooks {
     public void cleanMeetupData() {
         notificationRepository.deleteAll();
         invitationRepository.deleteAll();
+        chatMessageRepository.deleteAll();
         participationRepository.deleteAllInBatch();
         meetupRepository.deleteAllInBatch();
         blockRepository.deleteAll();
