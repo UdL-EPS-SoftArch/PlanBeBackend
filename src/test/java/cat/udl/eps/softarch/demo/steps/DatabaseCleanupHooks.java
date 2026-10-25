@@ -16,6 +16,7 @@ public class DatabaseCleanupHooks {
     private final NotificationRepository notificationRepository;
     private final InvitationRepository invitationRepository;
     private final ParticipationRepository participationRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final MeetupRepository meetupRepository;
     private final BlockRepository blockRepository;
     private final ReportRepository reportRepository;
@@ -25,10 +26,11 @@ public class DatabaseCleanupHooks {
     public DatabaseCleanupHooks(NotificationRepository notificationRepository, InvitationRepository invitationRepository,
                                 ParticipationRepository participationRepository, MeetupRepository meetupRepository,
                                 BlockRepository blockRepository, ReportRepository reportRepository,
-                                MembershipRepository membershipRepository, GroupRepository groupRepository) {
+                                MembershipRepository membershipRepository, GroupRepository groupRepository,ChatMessageRepository chatMessageRepository ) {
         this.notificationRepository = notificationRepository;
         this.invitationRepository = invitationRepository;
         this.participationRepository = participationRepository;
+        this.chatMessageRepository = chatMessageRepository;
         this.meetupRepository = meetupRepository;
         this.membershipRepository = membershipRepository;
         this.groupRepository = groupRepository;
@@ -40,6 +42,7 @@ public class DatabaseCleanupHooks {
     public void cleanMeetupData() {
         notificationRepository.deleteAll();
         invitationRepository.deleteAll();
+        chatMessageRepository.deleteAll();
         participationRepository.deleteAllInBatch();
         meetupRepository.deleteAllInBatch();
         // Meetups point at groups, and memberships at both: wipe them after the meetups.
