@@ -81,6 +81,14 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
     @RestResource(exported = false)
     Optional<Meetup> findByTitle(String title);
 
+    // Used by RecurringMeetups (#53); not exported, it would bypass the visibility checks
+    @RestResource(exported = false)
+    List<Meetup> findByPreviousOccurrenceId(Long previousOccurrenceId);
+
+    @RestResource(exported = false)
+    @Query("select m.previousOccurrence.id from Meetup m where m.id = ?1")
+    Long findStoredPreviousOccurrenceId(Long id);
+
     /**
      * #46: PUBLIC and OPEN meetups not started yet, in the user's city (case-insensitive) and matching one of the
      * user's interests, either as a tag or through the interest's category. Excludes the meetups the user
