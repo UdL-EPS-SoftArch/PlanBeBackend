@@ -2,6 +2,8 @@ package cat.udl.eps.softarch.demo.repository;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +19,8 @@ import java.util.Optional;
 public interface MeetupRepository extends JpaRepository<Meetup, Long> {
 
     // PUBLIC meetups, or PRIVATE ones for their organizer, ADMIN, invitees with a PENDING or ACCEPTED
-    // invitation and active participants (#28)
+    // invitation and active participants (#28). GROUP meetups (#33, RF-5.4) are only visible to the
+    // active members of their group.
     String VISIBILITY_CLAUSE =
         "m.visibility = 'PUBLIC' " +
         "or m.organizer.id = ?#{authentication.name} " +
@@ -27,7 +30,14 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
         "cat.udl.eps.softarch.demo.domain.InvitationStatus.ACCEPTED)) " +
         "or exists (select p from Participation p where p.meetup = m and p.participant.id = ?#{authentication.name} " +
         "and p.status in (cat.udl.eps.softarch.demo.domain.ParticipationStatus.CONFIRMED, " +
-        "cat.udl.eps.softarch.demo.domain.ParticipationStatus.WAITING))";
+        "cat.udl.eps.softarch.demo.domain.ParticipationStatus.WAITING)) " +
+        "or exists (select ms from Membership ms where ms.group.id = m.group.id " +
+        "and ms.member.id = ?#{authentication.name} " +
+        "and ms.status = cat.udl.eps.softarch.demo.domain.enums.MembershipStatus.ACTIVE)";
+
+    @Override
+    @Query("select m from Meetup m where " + VISIBILITY_CLAUSE)
+    Page<Meetup> findAll(Pageable pageable);
 
     @Query("select m from Meetup m where " + VISIBILITY_CLAUSE)
     List<Meetup> findVisibleMeetups();
