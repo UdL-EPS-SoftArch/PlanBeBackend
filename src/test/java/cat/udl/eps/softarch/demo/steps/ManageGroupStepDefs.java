@@ -2,7 +2,7 @@ package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.domain.Group;
 import cat.udl.eps.softarch.demo.domain.User;
-import cat.udl.eps.softarch.demo.domain.Enum.Visibility;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.repository.GroupRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import io.cucumber.java.en.And;
