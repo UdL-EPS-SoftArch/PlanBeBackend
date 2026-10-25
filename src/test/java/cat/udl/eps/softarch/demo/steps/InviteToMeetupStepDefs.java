@@ -178,6 +178,18 @@ public class InviteToMeetupStepDefs {
         assertThat(participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId()).isPresent(), is(false));
     }
 
+    @When("I look up the invitation of {string} to the meetup {string} through the search endpoint")
+    public void iLookUpTheInvitationThroughTheSearchEndpoint(String inviteeUsername, String title) throws Throwable {
+        Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        stepDefs.result = stepDefs.mockMvc.perform(
+                get("/invitations/search/findByInviteeIdAndMeetupId")
+                    .param("inviteeId", inviteeUsername)
+                    .param("meetupId", meetup.getId().toString())
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
+    }
+
     @When("I list the meetups visible to me")
     public void iListTheMeetupsVisibleToMe() throws Throwable {
         stepDefs.result = stepDefs.mockMvc.perform(

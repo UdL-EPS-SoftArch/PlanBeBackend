@@ -32,8 +32,11 @@ public interface InvitationRepository extends CrudRepository<Invitation, Long>, 
     @Query("SELECT i FROM Invitation i WHERE i.id = :id AND (" + VISIBILITY_CLAUSE + ")")
     Optional<Invitation> findById(@Param("id") Long id);
 
+    // Internal lookups: not exported, they would bypass VISIBILITY_CLAUSE
+    @RestResource(exported = false)
     Optional<Invitation> findByInviteeIdAndMeetupId(String inviteeId, Long meetupId);
 
+    @RestResource(exported = false)
     boolean existsByInviteeIdAndMeetupId(String inviteeId, Long meetupId);
 
     // Stored values, used to compare against the incoming changes before saving

@@ -1,12 +1,15 @@
 package cat.udl.eps.softarch.demo.handler;
 
+import cat.udl.eps.softarch.demo.domain.Group;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
-import cat.udl.eps.softarch.demo.domain.NotificationType;
+import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
+import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
 import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.BlockRepository;
+import cat.udl.eps.softarch.demo.repository.MembershipRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
 import org.springframework.data.rest.core.annotation.HandleAfterCreate;
@@ -27,7 +30,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * Join / leave a meetup and waiting list (#22). Promotions and SPOT_FREED (#44) are done by {@link WaitingList}.
@@ -46,15 +48,19 @@ public class ParticipationEventHandler {
     private final UserRepository userRepository;
     private final WaitingList waitingList;
     private final Notifier notifier;
+    private final MembershipRepository membershipRepository;
     private final BlockRepository blockRepository;
 
     public ParticipationEventHandler(ParticipationRepository participationRepository, UserRepository userRepository,
-                                     WaitingList waitingList, Notifier notifier, BlockRepository blockRepository) {
+                                     WaitingList waitingList, Notifier notifier,
+                                     MembershipRepository membershipRepository,
+                                      BlockRepository blockRepository) {
         this.participationRepository = participationRepository;
         this.userRepository = userRepository;
         this.waitingList = waitingList;
         this.notifier = notifier;
         this.blockRepository = blockRepository;
+        this.membershipRepository = membershipRepository;
     }
 
     @HandleBeforeCreate
@@ -80,6 +86,11 @@ public class ParticipationEventHandler {
         // Handle visibility: if meetup is PRIVATE, throw 403 Forbidden
         if (meetup.getVisibility() == Meetup.Visibility.PRIVATE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot join private meetup without invitation");
+        }
+        // RF-5.4: only the active members of the group join its GROUP meetups.
+        if (meetup.getVisibility() == Meetup.Visibility.GROUP && !isActiveGroupMember(meetup.getGroup(), user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                "Cannot join a group meetup without being an active member of the group");
         }
 
         // Check age and gender restrictions
@@ -215,6 +226,19 @@ public class ParticipationEventHandler {
         if (participation.getStatus() == ParticipationStatus.CONFIRMED) {
             waitingList.fillFreeSpots(participation.getMeetup().getId());
         }
+    }
+
+    /**
+     * RF-5.4: only the active members of the group join its GROUP meetups. Mirrors
+     * MeetupSecurity#isActiveGroupMember, which is private and takes a username; here the User is
+     * already loaded and the membership query is the same.
+     */
+    private boolean isActiveGroupMember(Group group, User user) {
+        if (group == null || group.getId() == null || user == null || user.getId() == null) return false;
+        if (group.getOwnedBy() != null && user.getId().equals(group.getOwnedBy().getId())) return true;
+        return membershipRepository.findByGroupIdAndMemberId(group.getId(), user.getId())
+            .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
+            .isPresent();
     }
 
     private static boolean isAdmin() {

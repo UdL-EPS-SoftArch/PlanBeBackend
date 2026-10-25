@@ -3,8 +3,9 @@ package cat.udl.eps.softarch.demo.steps;
 import cat.udl.eps.softarch.demo.domain.Group;
 import cat.udl.eps.softarch.demo.domain.GroupRole;
 import cat.udl.eps.softarch.demo.domain.Membership;
-import cat.udl.eps.softarch.demo.domain.MembershipStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.repository.GroupRepository;
 import cat.udl.eps.softarch.demo.repository.MembershipRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -19,12 +20,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 public class GroupMembershipStepDefs {
@@ -104,5 +107,91 @@ public class GroupMembershipStepDefs {
     public void thereIsNoMembershipOfInTheGroupWithName(String memberUsername, String groupName) {
         Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
         assertThat(membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).isPresent(), is(false));
+    }
+
+    // ---------- RF-5.3: join requests ----------
+
+    @Given("There is a group {string} administered by {string}")
+    public void thereIsAGroupAdministeredBy(String name, String ownerUsername) {
+        Group group = new Group();
+        group.setName(name);
+        group.setVisibility(Visibility.PUBLIC);
+        group.setOwnedBy(userRepository.findById(ownerUsername).orElseThrow());
+        groupRepository.save(group);
+    }
+
+    /** Stores a join request directly: the API path is covered by "I request to join the group". */
+    @Given("There is a request of {string} to join the group with name {string}")
+    public void thereIsARequestOfToJoinTheGroupWithName(String memberUsername, String groupName) {
+        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        if (membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).isPresent()) {
+            throw new IllegalStateException("The user " + memberUsername + " already belongs to the group " + groupName);
+        }
+        Membership membership = new Membership();
+        membership.setGroup(group);
+        membership.setMember(userRepository.findById(memberUsername).orElseThrow());
+        membership.setRole(GroupRole.MEMBER);
+        membership.setStatus(MembershipStatus.PENDING);
+        membership.setJoinedAt(Instant.now());
+        membershipRepository.save(membership);
+    }
+
+    @When("I request to join the group with name {string}")
+    public void iRequestToJoinTheGroupWithName(String groupName) throws Throwable {
+        requestToJoin(groupName, Map.of());
+    }
+
+    @When("I request to join the group {string}")
+    public void iRequestToJoinTheGroup(String groupName) throws Throwable {
+        requestToJoin(groupName, Map.of());
+    }
+
+    @When("I request to join the group with name {string} with role {string} and status {string}")
+    public void iRequestToJoinTheGroupWithNameWithRoleAndStatus(String groupName, String role, String status)
+        throws Throwable {
+        requestToJoin(groupName, Map.of("role", role, "status", status));
+    }
+
+    @When("I approve the join request of {string} in the group with name {string}")
+    public void iApproveTheJoinRequestOf(String memberUsername, String groupName) throws Throwable {
+        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
+
+        stepDefs.result = stepDefs.mockMvc.perform(
+                patch(membership.getUri())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(stepDefs.mapper.writeValueAsString(Map.of("status", "ACTIVE")))
+                    .characterEncoding(StandardCharsets.UTF_8)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
+    }
+
+    @Then("The membership of {string} in the group with name {string} has status {string}")
+    public void theMembershipOfInTheGroupWithNameHasStatus(String memberUsername, String groupName, String status) {
+        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
+        assertThat(membership.getStatus().name(), is(status));
+    }
+
+    /**
+     * Posts a join request as the logged-in user. Extra fields let a scenario try to grant itself a role or
+     * an ACTIVE status: the handler must ignore them and store a PENDING MEMBER membership.
+     */
+    private void requestToJoin(String groupName, Map<String, Object> extraFields) throws Throwable {
+        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Map<String, Object> body = new HashMap<>();
+        body.put("group", group.getUri());
+        body.put("member", "/users/" + AuthenticationStepDefs.currentUsername);
+        body.putAll(extraFields);
+
+        stepDefs.result = stepDefs.mockMvc.perform(
+                post("/memberships")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(stepDefs.mapper.writeValueAsString(body))
+                    .characterEncoding(StandardCharsets.UTF_8)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .with(AuthenticationStepDefs.authenticate()))
+            .andDo(print());
     }
 }
