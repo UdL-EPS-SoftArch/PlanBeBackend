@@ -1,8 +1,8 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.domain.Group;
-import cat.udl.eps.softarch.demo.domain.GroupRole;
 import cat.udl.eps.softarch.demo.domain.Membership;
+import cat.udl.eps.softarch.demo.domain.enums.GroupRole;
 import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.domain.enums.Visibility;

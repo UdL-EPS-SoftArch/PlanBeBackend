@@ -1,10 +1,10 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.LockModeType;

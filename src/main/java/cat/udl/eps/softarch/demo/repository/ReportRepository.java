@@ -1,7 +1,7 @@
 package cat.udl.eps.softarch.demo.repository;
 
 import cat.udl.eps.softarch.demo.domain.Report;
-import cat.udl.eps.softarch.demo.domain.ReportStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ReportStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;

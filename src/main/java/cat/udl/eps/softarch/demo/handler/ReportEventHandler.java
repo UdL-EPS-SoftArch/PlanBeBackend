@@ -1,8 +1,8 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Report;
-import cat.udl.eps.softarch.demo.domain.ReportStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.ReportStatus;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ReviewRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;

@@ -2,8 +2,10 @@ package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Participation;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.handler.WaitingList;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
@@ -57,8 +59,8 @@ public class WaitingListStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle("Test Meetup");
         meetup.setCapacity(capacity);
-        meetup.setVisibility(Meetup.Visibility.PUBLIC);
-        meetup.setStatus(Meetup.MeetupStatus.OPEN);
+        meetup.setVisibility(Visibility.PUBLIC);
+        meetup.setStatus(MeetupStatus.OPEN);
         currentMeetup = RunAs.admin(() -> meetupRepository.save(meetup));
     }
 
@@ -69,7 +71,7 @@ public class WaitingListStepDefs {
             addParticipation("user" + i, ParticipationStatus.CONFIRMED);
         }
         if (count >= currentMeetup.getCapacity()) {
-            currentMeetup.setStatus(Meetup.MeetupStatus.FULL);
+            currentMeetup.setStatus(MeetupStatus.FULL);
             currentMeetup = RunAs.admin(() -> meetupRepository.save(currentMeetup));
         }
     }
@@ -123,7 +125,7 @@ public class WaitingListStepDefs {
     @Then("the meetup status should be {string}")
     public void theMeetupStatusShouldBe(String status) {
         Meetup updatedMeetup = meetupRepository.findById(currentMeetup.getId()).orElseThrow();
-        assertEquals(Meetup.MeetupStatus.valueOf(status), updatedMeetup.getStatus());
+        assertEquals(MeetupStatus.valueOf(status), updatedMeetup.getStatus());
     }
 
     @Then("my participation status should be {string}")
