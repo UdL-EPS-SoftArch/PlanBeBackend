@@ -2,7 +2,7 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Notification;
 import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
-import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.NotificationRepository;
 import org.slf4j.Logger;

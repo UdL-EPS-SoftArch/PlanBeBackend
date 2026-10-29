@@ -1,4 +1,4 @@
-package cat.udl.eps.softarch.demo.domain.Entity;
+package cat.udl.eps.softarch.demo.domain.entities;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnore;

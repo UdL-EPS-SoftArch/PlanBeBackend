@@ -4,9 +4,11 @@ import cat.udl.eps.softarch.demo.domain.Invitation;
 import cat.udl.eps.softarch.demo.domain.Location;
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Notification;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import cat.udl.eps.softarch.demo.domain.Participation;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.NotificationRepository;
@@ -79,8 +81,8 @@ public class NotificationStepDefs {
         // "Change date" moves the start to 2030-05-01.
         meetup.setStartDate(Instant.now().plus(java.time.Duration.ofDays(1)));
         meetup.setEndDate(Instant.parse("2031-01-01T00:00:00Z"));
-        meetup.setVisibility(Meetup.Visibility.PUBLIC);
-        meetup.setStatus(Meetup.MeetupStatus.OPEN);
+        meetup.setVisibility(Visibility.PUBLIC);
+        meetup.setStatus(MeetupStatus.OPEN);
         meetup.setOrganizer(userRepository.findById(organizerUsername).orElseThrow());
         RunAs.admin(() -> meetupRepository.save(meetup));
     }
@@ -99,9 +101,9 @@ public class NotificationStepDefs {
         participation.setStatus(ParticipationStatus.valueOf(status));
         participation.setJoinedAt(Instant.now());
         participationRepository.save(participation);
-        if (meetup.getStatus() == Meetup.MeetupStatus.OPEN || meetup.getStatus() == Meetup.MeetupStatus.FULL) {
+        if (meetup.getStatus() == MeetupStatus.OPEN || meetup.getStatus() == MeetupStatus.FULL) {
             long confirmed = participationRepository.countByMeetupIdAndStatus(meetup.getId(), ParticipationStatus.CONFIRMED);
-            meetup.setStatus(confirmed >= meetup.getCapacity() ? Meetup.MeetupStatus.FULL : Meetup.MeetupStatus.OPEN);
+            meetup.setStatus(confirmed >= meetup.getCapacity() ? MeetupStatus.FULL : MeetupStatus.OPEN);
             RunAs.admin(() -> meetupRepository.save(meetup));
         }
     }
@@ -183,7 +185,7 @@ public class NotificationStepDefs {
     @Given("The meetup {string} is in status {string}")
     public void theMeetupIsInStatus(String title, String status) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        meetup.setStatus(Meetup.MeetupStatus.valueOf(status));
+        meetup.setStatus(MeetupStatus.valueOf(status));
         RunAs.admin(() -> meetupRepository.save(meetup));
     }
 
