@@ -2,7 +2,7 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Location;
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.domain.enums.Recurrence;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import org.springframework.stereotype.Component;

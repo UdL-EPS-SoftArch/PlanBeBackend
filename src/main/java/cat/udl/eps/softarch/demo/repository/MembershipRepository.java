@@ -23,7 +23,7 @@ public interface MembershipRepository extends CrudRepository<Membership, Long>, 
         "OR m.group.ownedBy.id = ?#{authentication.name} " +
         "OR EXISTS (SELECT gm FROM Membership gm WHERE gm.group.id = m.group.id " +
         "AND gm.member.id = ?#{authentication.name} " +
-        "AND gm.role IN (cat.udl.eps.softarch.demo.domain.GroupRole.OWNER, cat.udl.eps.softarch.demo.domain.GroupRole.ADMIN)) " +
+        "AND gm.role IN (cat.udl.eps.softarch.demo.domain.enums.GroupRole.OWNER, cat.udl.eps.softarch.demo.domain.enums.GroupRole.ADMIN)) " +
         "OR ?#{hasRole('ADMIN')} = true";
 
     @Override
@@ -48,7 +48,7 @@ public interface MembershipRepository extends CrudRepository<Membership, Long>, 
     @RestResource(exported = false)
     @Query("SELECT m FROM Membership m WHERE m.group.id = :groupId " +
         "AND m.status = cat.udl.eps.softarch.demo.domain.enums.MembershipStatus.ACTIVE " +
-        "AND m.role IN (cat.udl.eps.softarch.demo.domain.GroupRole.OWNER, " +
-        "cat.udl.eps.softarch.demo.domain.GroupRole.ADMIN)")
+        "AND m.role IN (cat.udl.eps.softarch.demo.domain.enums.GroupRole.OWNER, " +
+        "cat.udl.eps.softarch.demo.domain.enums.GroupRole.ADMIN)")
     List<Membership> findActiveManagersByGroupId(@Param("groupId") Long groupId);
 }

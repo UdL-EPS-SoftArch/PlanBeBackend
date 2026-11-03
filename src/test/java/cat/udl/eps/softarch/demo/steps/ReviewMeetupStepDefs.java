@@ -2,9 +2,11 @@ package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
 import cat.udl.eps.softarch.demo.domain.Participation;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.Review;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.ReviewRepository;
@@ -51,8 +53,8 @@ public class ReviewMeetupStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle(title);
         meetup.setCapacity(10);
-        meetup.setVisibility(Meetup.Visibility.PUBLIC);
-        meetup.setStatus(Meetup.MeetupStatus.valueOf(status));
+        meetup.setVisibility(Visibility.PUBLIC);
+        meetup.setStatus(MeetupStatus.valueOf(status));
         meetup.setOrganizer(participant);
         Meetup saved = RunAs.admin(() -> meetupRepository.save(meetup));
 
@@ -73,8 +75,8 @@ public class ReviewMeetupStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle(title);
         meetup.setCapacity(10);
-        meetup.setVisibility(Meetup.Visibility.PUBLIC);
-        meetup.setStatus(Meetup.MeetupStatus.valueOf(status));
+        meetup.setVisibility(Visibility.PUBLIC);
+        meetup.setStatus(MeetupStatus.valueOf(status));
         meetup.setOrganizer(organizer);
         Meetup saved = RunAs.admin(() -> meetupRepository.save(meetup));
 

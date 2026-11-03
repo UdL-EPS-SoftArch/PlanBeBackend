@@ -1,6 +1,6 @@
 package cat.udl.eps.softarch.demo.handler;
 
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;

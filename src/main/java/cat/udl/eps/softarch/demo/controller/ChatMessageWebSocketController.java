@@ -2,8 +2,8 @@ package cat.udl.eps.softarch.demo.controller;
 
 import cat.udl.eps.softarch.demo.domain.ChatMessage;
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.ChatMessageRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;

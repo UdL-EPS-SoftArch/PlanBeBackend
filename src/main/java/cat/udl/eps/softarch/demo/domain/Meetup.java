@@ -1,9 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
-import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
-import cat.udl.eps.softarch.demo.domain.enums.Category;
-import cat.udl.eps.softarch.demo.domain.enums.Recurrence;
-import cat.udl.eps.softarch.demo.domain.enums.Gender;
+import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
+import cat.udl.eps.softarch.demo.domain.enums.*;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -130,13 +128,7 @@ public class Meetup extends UriEntity<Long> {
     @EqualsAndHashCode.Exclude
     private LoadedState loadedState;
 
-    public enum Visibility {
-        PUBLIC, PRIVATE, GROUP
-    }
 
-    public enum MeetupStatus {
-        DRAFT, OPEN, FULL, CANCELLED, FINISHED
-    }
 
     public record LoadedState(MeetupStatus status, Integer capacity, Instant startDate, Instant endDate,
                               Location location, String organizerId, Long groupId) {}

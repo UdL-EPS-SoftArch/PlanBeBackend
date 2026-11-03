@@ -1,5 +1,8 @@
 package cat.udl.eps.softarch.demo.steps;
 
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.steps.RunAs;
 import cat.udl.eps.softarch.demo.domain.*;
 import cat.udl.eps.softarch.demo.repository.*;
@@ -122,8 +125,8 @@ public class JoinMeetupStepDefs {
         Meetup meetup = new Meetup();
         meetup.setTitle("Test Meetup");
         meetup.setCapacity(capacity);
-        meetup.setVisibility(Meetup.Visibility.PUBLIC);
-        meetup.setStatus(Meetup.MeetupStatus.OPEN);
+        meetup.setVisibility(Visibility.PUBLIC);
+        meetup.setStatus(MeetupStatus.OPEN);
         currentMeetup = RunAs.admin(() -> meetupRepository.save(meetup));
     }
 
@@ -162,7 +165,7 @@ public class JoinMeetupStepDefs {
     @Given("the meetup {string} is cancelled")
     public void theMeetupIsCancelled(String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        meetup.setStatus(Meetup.MeetupStatus.CANCELLED);
+        meetup.setStatus(MeetupStatus.CANCELLED);
         RunAs.admin(() -> meetupRepository.save(meetup));
     }
 

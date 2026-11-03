@@ -1,6 +1,6 @@
 package cat.udl.eps.softarch.demo.domain;
 
-import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.Category;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;

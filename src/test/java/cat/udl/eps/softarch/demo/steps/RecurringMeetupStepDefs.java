@@ -1,8 +1,9 @@
 package cat.udl.eps.softarch.demo.steps;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
-import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.domain.enums.Recurrence;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
@@ -138,9 +139,9 @@ public class RecurringMeetupStepDefs {
         assertThat(next.getRecurrence(), is(previous.getRecurrence()));
         assertThat(next.getLocation().getCity(), is(previous.getLocation().getCity()));
         assertThat(participationRepository.findByMeetupIdAndStatusIn(previous.getId(),
-            java.util.EnumSet.allOf(cat.udl.eps.softarch.demo.domain.ParticipationStatus.class)), hasSize(1));
+            java.util.EnumSet.allOf(ParticipationStatus.class)), hasSize(1));
         assertThat(participationRepository.findByMeetupIdAndStatusIn(next.getId(),
-            java.util.EnumSet.allOf(cat.udl.eps.softarch.demo.domain.ParticipationStatus.class)), hasSize(0));
+            java.util.EnumSet.allOf(ParticipationStatus.class)), hasSize(0));
     }
 
     @When("I create the meetup {string} starting on {string} with recurrence {string}")
@@ -196,8 +197,8 @@ public class RecurringMeetupStepDefs {
     private void assertNextStartsAt(Meetup previous, Instant expectedStart) {
         List<Meetup> next = meetupRepository.findByPreviousOccurrenceId(previous.getId());
         assertThat(next, hasSize(1));
-        assertThat(next.get(0).getStartDate(), is(expectedStart));
-        assertThat(Duration.between(next.get(0).getStartDate(), next.get(0).getEndDate()),
+        assertThat(next.getFirst().getStartDate(), is(expectedStart));
+        assertThat(Duration.between(next.getFirst().getStartDate(), next.getFirst().getEndDate()),
             is(Duration.between(previous.getStartDate(), previous.getEndDate())));
     }
 

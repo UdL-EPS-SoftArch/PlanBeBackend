@@ -2,11 +2,8 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Group;
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
-import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
-import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
+import cat.udl.eps.softarch.demo.domain.enums.*;
 import cat.udl.eps.softarch.demo.domain.Participation;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
 import cat.udl.eps.softarch.demo.repository.BlockRepository;
 import cat.udl.eps.softarch.demo.repository.MembershipRepository;
@@ -84,11 +81,11 @@ public class ParticipationEventHandler {
         }
 
         // Handle visibility: if meetup is PRIVATE, throw 403 Forbidden
-        if (meetup.getVisibility() == Meetup.Visibility.PRIVATE) {
+        if (meetup.getVisibility() == Visibility.PRIVATE) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Cannot join private meetup without invitation");
         }
         // RF-5.4: only the active members of the group join its GROUP meetups.
-        if (meetup.getVisibility() == Meetup.Visibility.GROUP && !isActiveGroupMember(meetup.getGroup(), user)) {
+        if (meetup.getVisibility() == Visibility.GROUP && !isActiveGroupMember(meetup.getGroup(), user)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "Cannot join a group meetup without being an active member of the group");
         }

@@ -2,11 +2,11 @@ package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Block;
 import cat.udl.eps.softarch.demo.domain.Invitation;
-import cat.udl.eps.softarch.demo.domain.InvitationStatus;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.domain.Participation;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.InvitationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.BlockRepository;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;

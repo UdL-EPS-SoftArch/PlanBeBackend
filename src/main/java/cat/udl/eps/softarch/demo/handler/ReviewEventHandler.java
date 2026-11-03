@@ -1,9 +1,10 @@
 package cat.udl.eps.softarch.demo.handler;
 
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
 import cat.udl.eps.softarch.demo.domain.Review;
 import cat.udl.eps.softarch.demo.domain.User;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.ParticipationRepository;
 import cat.udl.eps.softarch.demo.repository.ReviewRepository;
 import cat.udl.eps.softarch.demo.repository.UserRepository;
@@ -40,7 +41,7 @@ public class ReviewEventHandler {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         review.setReviewer(reviewer);
 
-        if (meetup.getStatus() != Meetup.MeetupStatus.FINISHED) {
+        if (meetup.getStatus() != MeetupStatus.FINISHED) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Cannot review a meetup that is not finished");
         }

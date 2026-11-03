@@ -12,8 +12,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.*;
 import java.time.Instant;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
-import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;

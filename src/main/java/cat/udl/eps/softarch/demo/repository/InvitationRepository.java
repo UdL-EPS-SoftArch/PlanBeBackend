@@ -1,8 +1,8 @@
 package cat.udl.eps.softarch.demo.repository;
 
 import cat.udl.eps.softarch.demo.domain.Invitation;
-import cat.udl.eps.softarch.demo.domain.InvitationStatus;
-import cat.udl.eps.softarch.demo.domain.Meetup.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
+import cat.udl.eps.softarch.demo.domain.enums.InvitationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;

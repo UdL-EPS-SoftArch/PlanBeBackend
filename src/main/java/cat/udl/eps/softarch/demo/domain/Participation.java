@@ -1,6 +1,7 @@
 package cat.udl.eps.softarch.demo.domain;
 
-import cat.udl.eps.softarch.demo.domain.Entity.UriEntity;
+import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AccessLevel;

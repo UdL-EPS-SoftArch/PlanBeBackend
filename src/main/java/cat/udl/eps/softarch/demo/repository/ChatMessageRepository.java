@@ -20,7 +20,7 @@ public interface ChatMessageRepository extends CrudRepository<ChatMessage, Long>
     String PARTICIPANT_CLAUSE =
         "exists (select p from Participation p where p.meetup = c.meetup " +
         "and p.participant.id = ?#{authentication.name} " +
-        "and p.status = cat.udl.eps.softarch.demo.domain.ParticipationStatus.CONFIRMED)";
+        "and p.status = cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus.CONFIRMED)";
 
     @Override
     @Query("SELECT c FROM ChatMessage c WHERE " + PARTICIPANT_CLAUSE + " ORDER BY c.sentAt ASC, c.id ASC")

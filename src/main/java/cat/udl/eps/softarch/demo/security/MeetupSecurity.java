@@ -1,13 +1,13 @@
 package cat.udl.eps.softarch.demo.security;
 
 import cat.udl.eps.softarch.demo.domain.Group;
-import cat.udl.eps.softarch.demo.domain.GroupRole;
-import cat.udl.eps.softarch.demo.domain.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.Meetup;
-import cat.udl.eps.softarch.demo.domain.Meetup.Visibility;
+import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 import cat.udl.eps.softarch.demo.domain.Membership;
-import cat.udl.eps.softarch.demo.domain.ParticipationStatus;
+import cat.udl.eps.softarch.demo.domain.enums.GroupRole;
+import cat.udl.eps.softarch.demo.domain.enums.InvitationStatus;
 import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
+import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import cat.udl.eps.softarch.demo.repository.InvitationRepository;
 import cat.udl.eps.softarch.demo.repository.MeetupRepository;
 import cat.udl.eps.softarch.demo.repository.MembershipRepository;
