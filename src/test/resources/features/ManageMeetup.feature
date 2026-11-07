@@ -16,8 +16,8 @@ Feature: Manage Meetups
       | title       | Pàdel Match |
       | description | Let's play padel! |
       | capacity    | 4           |
-      | startDate   | 2026-11-01T10:00:00Z |
-      | endDate     | 2026-11-01T12:00:00Z |
+      | startDate   | 2030-11-01T10:00:00Z |
+      | endDate     | 2030-11-01T12:00:00Z |
       | locName     | Club Padel |
       | locAddress  | Street 1 |
       | locCity     | City A |
@@ -60,8 +60,8 @@ Feature: Manage Meetups
     Given I login as "organizer" with password "password"
     When I create a new meetup with the following details:
       | title       | Invalid Dates |
-      | startDate   | 2026-11-01T10:00:00Z |
-      | endDate     | 2026-11-01T08:00:00Z |
+      | startDate   | 2030-11-01T10:00:00Z |
+      | endDate     | 2030-11-01T08:00:00Z |
     Then The response code is 400
 
   Scenario: Organizer can edit their own meetup

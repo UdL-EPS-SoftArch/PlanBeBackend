@@ -167,14 +167,14 @@ public class InviteToMeetupStepDefs {
     public void hasAParticipationInTheMeetupWithStatus(String username, String title, String status) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
         Participation participation = participationRepository
-            .findByParticipantIdAndMeetupId(username, meetup.getId()).orElseThrow();
+            .findLatestByParticipantIdAndMeetupId(username, meetup.getId()).orElseThrow();
         assertThat(participation.getStatus().name(), is(status));
     }
 
     @And("{string} has no participation in the meetup {string}")
     public void hasNoParticipationInTheMeetup(String username, String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        assertThat(participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId()).isPresent(), is(false));
+        assertThat(participationRepository.findLatestByParticipantIdAndMeetupId(username, meetup.getId()).isPresent(), is(false));
     }
 
     @When("I look up the invitation of {string} to the meetup {string} through the search endpoint")
