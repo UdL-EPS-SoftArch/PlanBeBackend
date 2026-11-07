@@ -83,6 +83,14 @@ public class MeetupSecurity {
             || isGroupManager(stored.getGroup(), authentication.getName());
     }
 
+    /**
+     * Deleting follows the same rules as editing (#92): the organizer, a platform ADMIN, and the owner and the
+     * active OWNER/ADMIN members of the meetup's group, always checked against the state stored in the database.
+     */
+    public boolean canDelete(Meetup meetup) {
+        return meetup != null && meetup.getId() != null && canSave(meetup);
+    }
+
     private static boolean isOrganizer(Meetup meetup, String username) {
         return username != null && meetup.getOrganizer() != null
             && username.equals(meetup.getOrganizer().getId());

@@ -39,5 +39,10 @@ public interface GroupRepository extends CrudRepository<Group, Long>, PagingAndS
     @Query("SELECT g FROM Group g WHERE g.id = :id")
     Optional<Group> findByIdRaw(@Param("id") Long id);
 
-    List<Group> findByName(String name);
+    @Query("SELECT g FROM Group g WHERE g.name = :name AND (" + OWNERSHIP_CLAUSE + ")")
+    List<Group> findByName(@Param("name") String name);
+
+    /** Internal use only, like findByIdRaw: not filtered by visibility (#91). */
+    @RestResource(exported = false)
+    List<Group> findAllByName(String name);
 }
