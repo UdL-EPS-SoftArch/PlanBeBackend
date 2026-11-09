@@ -107,7 +107,7 @@ public class JoinMeetupStepDefs {
     @When("I leave the meetup {string}")
     public void iLeaveTheMeetup(String title) throws Exception {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        Optional<Participation> p = participationRepository.findByParticipantIdAndMeetupId("user1", meetup.getId());
+        Optional<Participation> p = participationRepository.findLatestByParticipantIdAndMeetupId("user1", meetup.getId());
 
         if (p.isEmpty()) {
             throw new RuntimeException("Participation not found for user1 and meetup " + title);

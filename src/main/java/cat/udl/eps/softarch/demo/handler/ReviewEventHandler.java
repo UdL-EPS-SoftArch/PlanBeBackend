@@ -47,7 +47,7 @@ public class ReviewEventHandler {
         }
 
         boolean confirmedParticipant = participationRepository
-            .findByParticipantIdAndMeetupId(reviewer.getId(), meetup.getId())
+            .findLatestByParticipantIdAndMeetupId(reviewer.getId(), meetup.getId())
             .map(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
             .orElse(false);
         if (!confirmedParticipant) {
@@ -55,7 +55,7 @@ public class ReviewEventHandler {
                 "Only confirmed participants can review this meetup");
         }
 
-        if (reviewRepository.findByReviewerIdAndMeetupId(reviewer.getId(), meetup.getId()).isPresent()) {
+        if (reviewRepository.findAnyByReviewerIdAndMeetupId(reviewer.getId(), meetup.getId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                 "User already reviewed this meetup");
         }

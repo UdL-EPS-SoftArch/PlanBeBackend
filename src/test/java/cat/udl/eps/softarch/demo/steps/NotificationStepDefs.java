@@ -367,7 +367,7 @@ public class NotificationStepDefs {
 
     private Participation participation(String username, String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        return participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId()).orElseThrow();
+        return participationRepository.findLatestByParticipantIdAndMeetupId(username, meetup.getId()).orElseThrow();
     }
 
     private void assertTargets(String username, String type, String uri) {
