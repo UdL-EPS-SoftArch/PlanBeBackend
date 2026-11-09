@@ -1,37 +1,238 @@
 @startuml
+title PlanBe - Modelo de entidades
 
-class User extends UriEntity implements UserDetails {
-  username : String
-  password : String
-  email : String
-  displayName : String
-  bio : String
-  avatarUrl : String
-  city : String
-  birthDate : LocalDate
-  gender : Gender
-  showPersonalData : boolean
-  admin : boolean
-  getAge() : Integer
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "domain.entities" {
+  abstract class UriEntity<ID> {
+    uri : String
+    version : Long
+  }
 }
 
-class Interest extends UriEntity {
-  id : Long
-  name : String
+package "domain" {
+  class User extends UriEntity {
+    id : String <<username>>
+    email : String
+    password : String
+    admin : boolean
+    displayName : String
+    bio : String
+    avatarUrl : String
+    city : String
+    birthDate : LocalDate
+    gender : Gender
+    showPersonalData : boolean
+    getAge() : Integer
+  }
+  note right of User : implements UserDetails\nadmin = true -> ROLE_ADMIN
+
+  class Interest extends UriEntity {
+    id : Long
+    name : String <<unique>>
+    category : Category
+  }
+
+  class Meetup extends UriEntity {
+    id : Long
+    title : String
+    description : String
+    capacity : Integer
+    category : Category
+    visibility : Visibility = PUBLIC
+    status : MeetupStatus = OPEN
+    minAge : Integer
+    maxAge : Integer
+    targetGender : Gender
+    price : BigDecimal
+    startDate : Instant
+    endDate : Instant
+    recurrence : Recurrence = NONE
+    recurrenceEnd : LocalDate
+  }
+
+  class Location <<embeddable>> {
+    name : String
+    address : String
+    city : String
+    latitude : Double
+    longitude : Double
+  }
+
+  class Participation extends UriEntity {
+    id : Long
+    status : ParticipationStatus
+    joinedAt : Instant
+  }
+
+  class Invitation extends UriEntity {
+    id : Long
+    status : InvitationStatus
+    created : Instant
+  }
+
+  class Group extends UriEntity {
+    id : Long
+    name : String
+    description : String
+    visibility : Visibility = PUBLIC
+    avatarUrl : String
+    created : Instant
+    modified : Instant
+  }
+
+  class Membership extends UriEntity {
+    id : Long
+    role : GroupRole
+    status : MembershipStatus
+    joinedAt : Instant
+  }
+
+  class Comment extends UriEntity {
+    id : Long
+    text : String
+    created : Instant
+  }
+
+  class Review extends UriEntity {
+    id : Long
+    rating : Integer
+    text : String
+    created : Instant
+  }
+
+  class ChatMessage extends UriEntity {
+    id : Long
+    text : String
+    sentAt : Instant
+  }
+
+  class Notification extends UriEntity {
+    id : Long
+    type : NotificationType
+    message : String
+    targetUri : String
+    read : boolean
+    created : Instant
+  }
+
+  class Block extends UriEntity {
+    id : Long
+    created : Instant
+  }
+
+  class Report extends UriEntity {
+    id : Long
+    targetUri : String
+    reason : String
+    status : ReportStatus
+    created : Instant
+  }
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  NON_BINARY
-  UNDISCLOSED
+package "domain.enums" {
+  enum Gender {
+    MALE
+    FEMALE
+    NON_BINARY
+    UNDISCLOSED
+  }
+  enum Category {
+    TECHNOLOGY
+    SPORTS
+    ARTS
+    CULTURE
+    EDUCATION
+    HEALTH
+    OTHER
+  }
+  enum Visibility {
+    PUBLIC
+    PRIVATE
+    GROUP
+  }
+  enum MeetupStatus {
+    DRAFT
+    OPEN
+    FULL
+    CANCELLED
+    FINISHED
+  }
+  enum Recurrence {
+    NONE
+    WEEKLY
+    BIWEEKLY
+    MONTHLY
+  }
+  enum ParticipationStatus {
+    CONFIRMED
+    WAITING
+    CANCELLED
+  }
+  enum InvitationStatus {
+    PENDING
+    ACCEPTED
+    DECLINED
+  }
+  enum GroupRole {
+    OWNER
+    ADMIN
+    MEMBER
+  }
+  enum MembershipStatus {
+    PENDING
+    ACTIVE
+  }
+  enum NotificationType {
+    INVITATION
+    MEETUP_CANCELLED
+    MEETUP_UPDATED
+    SPOT_FREED
+    GROUP_REQUEST
+  }
+  enum ReportStatus {
+    OPEN
+    RESOLVED
+    DISMISSED
+  }
 }
 
-class UriEntity {
-  uri : String
-}
-
-User "1" --right-- "*" Resource : owner <
+' Perfil
 User "*" --> "*" Interest : interests
+
+' Quedadas
+Meetup "*" --> "1" User : organizer
+Meetup "*" --> "0..1" Group : group
+Meetup *-- "0..1" Location : location
+Meetup "*" --> "*" Interest : tags
+Meetup "0..1" --> "0..1" Meetup : previousOccurrence
+
+' Participación e invitaciones
+Participation "*" --> "1" User : participant
+Participation "*" --> "1" Meetup : meetup
+Invitation "*" --> "1" User : invitee
+Invitation "*" --> "1" User : invitedBy
+Invitation "*" --> "1" Meetup : meetup
+
+' Grupos
+Group "*" --> "1" User : ownedBy
+Membership "*" --> "1" Group : group
+Membership "*" --> "1" User : member
+
+' Comentarios, valoraciones y chat
+Comment "*" --> "1" User : author
+Comment "*" --> "1" Meetup : meetup
+Review "*" --> "1" User : reviewer
+Review "*" --> "1" Meetup : meetup
+ChatMessage "*" --> "1" User : sender
+ChatMessage "*" --> "1" Meetup : meetup
+
+' Notificaciones y moderación
+Notification "*" --> "1" User : recipient
+Block "*" --> "1" User : blocker
+Block "*" --> "1" User : blocked
+Report "*" --> "1" User : reporter
 
 @enduml
