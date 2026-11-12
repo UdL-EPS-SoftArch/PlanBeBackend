@@ -16,8 +16,8 @@ Feature: Manage Meetups
       | title       | Pàdel Match |
       | description | Let's play padel! |
       | capacity    | 4           |
-      | startDate   | 2027-11-01T10:00:00Z |
-      | endDate     | 2027-11-01T12:00:00Z |
+      | startDate   | now+1d |
+      | endDate     | now+2d |
       | locName     | Club Padel |
       | locAddress  | Street 1 |
       | locCity     | City A |
@@ -53,16 +53,18 @@ Feature: Manage Meetups
     Given I login as "organizer" with password "password"
     When I create a new meetup with the following details:
       | title       | Past Event |
-      | startDate   | 2020-01-01T10:00:00Z |
+      | startDate   | now-1d |
     Then The response code is 400
+    And The error message is "startDate must be a future date"
 
   Scenario: Cannot create a meetup with end date before start date
     Given I login as "organizer" with password "password"
     When I create a new meetup with the following details:
       | title       | Invalid Dates |
-      | startDate   | 2027-11-01T10:00:00Z |
-      | endDate     | 2027-11-01T08:00:00Z |
+      | startDate   | now+2d |
+      | endDate     | now+1d |
     Then The response code is 400
+    And The error message is "endDate must be after startDate"
 
   Scenario: Organizer can edit their own meetup
     Given I login as "organizer" with password "password"

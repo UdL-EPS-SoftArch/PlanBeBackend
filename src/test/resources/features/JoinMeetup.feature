@@ -32,14 +32,14 @@ Feature: Join and Leave a Public Meetup
     Given I login as "user1" with password "password123"
     And I have joined the meetup "Padel Match"
     When I leave the meetup "Padel Match"
-    Then the response code is 200
+    Then the response code is 204
     And the participation status is "CANCELLED"
 
   Scenario: User who left can join again
     Given I login as "user1" with password "password123"
     And I have joined the meetup "Padel Match"
     When I leave the meetup "Padel Match"
-    Then the response code is 200
+    Then the response code is 204
     When I join the meetup "Padel Match"
     Then the response code is 201
     And the participation status is "CONFIRMED"
@@ -55,7 +55,7 @@ Feature: Join and Leave a Public Meetup
     And I have joined the meetup "Padel Match"
     And I login as "organizer" with password "password"
     When the organizer cancels the meetup "Padel Match"
-    Then the response code is 200
+    Then the response code is 204
     And the participation status is "CANCELLED"
 
   Scenario: Cannot join a CANCELLED meetup
