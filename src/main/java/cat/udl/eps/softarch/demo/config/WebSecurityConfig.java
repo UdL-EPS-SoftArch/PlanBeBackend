@@ -3,6 +3,7 @@ package cat.udl.eps.softarch.demo.config;
 import java.util.Arrays;
 import java.util.List;
 
+import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,9 +28,11 @@ public class WebSecurityConfig {
     @Bean
     protected SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.authorizeHttpRequests((auth) -> auth
+                // Error dispatches keep the status of the original request (e.g. 409 on POST /users)
+                .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/ws", "/ws/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/identity").authenticated()
-                .requestMatchers(HttpMethod.GET, "/users").authenticated()
+                .requestMatchers(HttpMethod.GET, "/users", "/users/search/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/users").permitAll()
                 .requestMatchers(HttpMethod.POST, "/users/*").denyAll()
                 .requestMatchers("/users/*/*").authenticated()              // Profile associations (e.g. interests)
@@ -47,11 +50,17 @@ public class WebSecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/notifications", "/notifications/**").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/notifications/*").authenticated()
                 .requestMatchers("/notifications", "/notifications/**").denyAll()
+                // Participations are only listed and searched by logged-in users (#89)
+                .requestMatchers(HttpMethod.GET, "/participations", "/participations/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/*/*").authenticated()
-                .requestMatchers(HttpMethod.POST, "/*/*").authenticated()
-                .requestMatchers(HttpMethod.PUT, "/*/*").authenticated()
-                .requestMatchers(HttpMethod.PATCH, "/*/*").authenticated()
-                .requestMatchers(HttpMethod.DELETE, "/*/*").authenticated()
+                // Every write needs a logged-in user, at any depth; registration (POST /users) is allowed above (#88)
+                .requestMatchers(HttpMethod.POST, "/**").authenticated()
+                .requestMatchers(HttpMethod.PUT, "/**").authenticated()
+                .requestMatchers(HttpMethod.PATCH, "/**").authenticated()
+                .requestMatchers(HttpMethod.DELETE, "/**").authenticated()
+                // Searches keep the row filters of their repository; associations (/x/{id}/y) need a login (#88)
+                .requestMatchers(HttpMethod.GET, "/*/search/*").permitAll()
+                .requestMatchers("/*/*/*").authenticated()
                 .anyRequest().permitAll())
             .csrf((csrf) -> csrf.disable())
             .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

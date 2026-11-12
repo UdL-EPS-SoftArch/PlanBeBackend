@@ -100,7 +100,7 @@ public class ModerationStepDefs {
     @When("I report the review of {string} on the meetup {string} with reason {string}")
     public void iReportTheReview(String reviewerUsername, String title, String reason) throws Throwable {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        Review review = reviewRepository.findByReviewerIdAndMeetupId(reviewerUsername, meetup.getId()).orElseThrow();
+        Review review = reviewRepository.findAnyByReviewerIdAndMeetupId(reviewerUsername, meetup.getId()).orElseThrow();
         report(review.getUri(), reason);
     }
 
@@ -136,7 +136,7 @@ public class ModerationStepDefs {
     public void theReportWasMadeByAboutTheReview(String reason, String reporterUsername, String reviewerUsername,
                                                  String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        Review review = reviewRepository.findByReviewerIdAndMeetupId(reviewerUsername, meetup.getId()).orElseThrow();
+        Review review = reviewRepository.findAnyByReviewerIdAndMeetupId(reviewerUsername, meetup.getId()).orElseThrow();
         Report report = report(reason);
         assertThat(report.getReporter().getId(), is(reporterUsername));
         assertThat(report.getTargetUri(), is(review.getUri()));

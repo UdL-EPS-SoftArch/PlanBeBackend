@@ -46,7 +46,7 @@ public class GroupMembershipStepDefs {
 
     @Given("There is a membership of {string} in the group with name {string} with role {string}")
     public void thereIsAMembershipOfInTheGroupWithNameWithRole(String memberUsername, String groupName, String role) {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         User member = userRepository.findById(memberUsername).orElseThrow();
 
         // The owner of the group is the one adding the members.
@@ -70,7 +70,7 @@ public class GroupMembershipStepDefs {
     @When("I change the role of the membership of {string} in the group with name {string} to {string}")
     public void iChangeTheRoleOfTheMembershipOfInTheGroupWithNameTo(String memberUsername, String groupName, String role)
         throws Throwable {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
         Map<String, Object> body = Map.of("role", role);
 
@@ -86,7 +86,7 @@ public class GroupMembershipStepDefs {
 
     @When("I remove the membership of {string} in the group with name {string}")
     public void iRemoveTheMembershipOfInTheGroupWithName(String memberUsername, String groupName) throws Throwable {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
 
         // No Accept header: Spring Data REST answers 204 No Content to a DELETE without a body representation.
@@ -98,14 +98,14 @@ public class GroupMembershipStepDefs {
 
     @And("The membership of {string} in the group with name {string} has role {string}")
     public void theMembershipOfInTheGroupWithNameHasRole(String memberUsername, String groupName, String role) {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
         assertThat(membership.getRole().name(), is(role));
     }
 
     @And("There is no membership of {string} in the group with name {string}")
     public void thereIsNoMembershipOfInTheGroupWithName(String memberUsername, String groupName) {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         assertThat(membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).isPresent(), is(false));
     }
 
@@ -123,7 +123,7 @@ public class GroupMembershipStepDefs {
     /** Stores a join request directly: the API path is covered by "I request to join the group". */
     @Given("There is a request of {string} to join the group with name {string}")
     public void thereIsARequestOfToJoinTheGroupWithName(String memberUsername, String groupName) {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         if (membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).isPresent()) {
             throw new IllegalStateException("The user " + memberUsername + " already belongs to the group " + groupName);
         }
@@ -154,7 +154,7 @@ public class GroupMembershipStepDefs {
 
     @When("I approve the join request of {string} in the group with name {string}")
     public void iApproveTheJoinRequestOf(String memberUsername, String groupName) throws Throwable {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
 
         stepDefs.result = stepDefs.mockMvc.perform(
@@ -169,7 +169,7 @@ public class GroupMembershipStepDefs {
 
     @Then("The membership of {string} in the group with name {string} has status {string}")
     public void theMembershipOfInTheGroupWithNameHasStatus(String memberUsername, String groupName, String status) {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         Membership membership = membershipRepository.findByGroupIdAndMemberId(group.getId(), memberUsername).orElseThrow();
         assertThat(membership.getStatus().name(), is(status));
     }
@@ -179,7 +179,7 @@ public class GroupMembershipStepDefs {
      * an ACTIVE status: the handler must ignore them and store a PENDING MEMBER membership.
      */
     private void requestToJoin(String groupName, Map<String, Object> extraFields) throws Throwable {
-        Group group = groupRepository.findByName(groupName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(groupName).stream().findFirst().orElseThrow();
         Map<String, Object> body = new HashMap<>();
         body.put("group", group.getUri());
         body.put("member", "/users/" + AuthenticationStepDefs.currentUsername);
