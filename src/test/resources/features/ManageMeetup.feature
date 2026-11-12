@@ -83,12 +83,14 @@ Feature: Manage Meetups
     And a meetup "Someone Else's Event" exists organized by "organizer"
     When I update the meetup "Someone Else's Event" with title "Hacked Title"
     Then The response code is 403
+    And the meetup "Someone Else's Event" now has title "Someone Else's Event"
 
   Scenario: Other user cannot delete someone else's meetup
     Given I login as "otherUser" with password "password"
     And a meetup "Someone Else's Event" exists organized by "organizer"
     When I delete the meetup "Someone Else's Event"
     Then The response code is 403
+    And the meetup "Someone Else's Event" still exists
 
   Scenario: Admin can edit any meetup
     Given I login as "admin" with password "password"
@@ -96,6 +98,13 @@ Feature: Manage Meetups
     When I update the meetup "User Event" with title "Admin Modified Title"
     Then The response code is 204
     And the meetup "User Event" now has title "Admin Modified Title"
+
+  Scenario: Admin can delete any meetup
+    Given I login as "admin" with password "password"
+    And a meetup "Admin Deletable" exists organized by "organizer"
+    When I delete the meetup "Admin Deletable"
+    Then The response code is 204
+    And the meetup "Admin Deletable" no longer exists
 
   Scenario: Create meetup with age range and gender target
     Given I login as "organizer" with password "password"

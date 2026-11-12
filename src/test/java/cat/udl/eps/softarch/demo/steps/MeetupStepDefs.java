@@ -135,7 +135,7 @@ public class MeetupStepDefs {
     @Then("the meetup {string} now has title {string}")
     public void the_meetup_now_has_title(String title, String newTitle) throws Throwable {
         stepDefs.mockMvc.perform(get("/meetups"))
-                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + newTitle + "')].title").value(newTitle));
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == \"" + newTitle + "\")].title").value(newTitle));
     }
 
     @When("I delete the meetup {string}")
@@ -151,7 +151,14 @@ public class MeetupStepDefs {
     @Then("the meetup {string} no longer exists")
     public void the_meetup_no_longer_exists(String title) throws Throwable {
         stepDefs.mockMvc.perform(get("/meetups"))
-                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')]", org.hamcrest.Matchers.empty()));
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == \"" + title + "\")]", org.hamcrest.Matchers.empty()));
+    }
+
+    @Then("the meetup {string} still exists")
+    public void the_meetup_still_exists(String title) throws Throwable {
+        stepDefs.mockMvc.perform(get("/meetups"))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == \"" + title + "\")]",
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.empty())));
     }
 
     @Then("the meetup {string} has location {string} in {string}")
