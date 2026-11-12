@@ -80,11 +80,13 @@ public class JoinMeetupStepDefs {
         p.setJoinedAt(java.time.Instant.now());
         participationRepository.save(p);
         participantUsername = username;
+        currentMeetup = meetup;
     }
 
     @When("I join the meetup {string}")
     public void iJoinTheMeetup(String title) throws Exception {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        currentMeetup = meetup;
         String body = "{\"meetup\": \"/meetups/" + meetup.getId() + "\" }";
 
         stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.post("/participations")
@@ -97,16 +99,20 @@ public class JoinMeetupStepDefs {
     @When("I leave the meetup {string}")
     public void iLeaveTheMeetup(String title) throws Exception {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        currentMeetup = meetup;
         String username = currentUsername();
-        Optional<Participation> p = participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId());
+        // Use the internal query without row-level SpEL: this test step runs
+        // outside a request, so there may be no Authentication in the context.
+        Optional<Participation> participationRepo =
+            participationRepository.findLatestByParticipantIdAndMeetupId(username, meetup.getId());
 
-        if (p.isEmpty()) {
+        if (participationRepo.isEmpty()) {
             throw new RuntimeException("Participation not found for " + username + " and meetup " + title);
         }
 
         String body = "{\"status\": \"CANCELLED\"}";
 
-        stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.patch("/participations/" + p.get().getId())
+        stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.patch("/participations/" + participationRepo.get().getId())
                 .with(AuthenticationStepDefs.authenticate())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
@@ -130,10 +136,14 @@ public class JoinMeetupStepDefs {
     @Then("the participation status is {string}")
     public void the_participation_status_is(String status) {
         // We verify the status directly in the database. A user who left and joined again keeps the old row,
-        // so the current one is the latest.
+        // so the current one is the latest. Use the internal query without row-level SpEL because this
+        // assertion runs outside a request and may have no Authentication in the context.
         String username = participantUsername != null ? participantUsername : currentUsername();
-        Participation p = participationRepository.findAll().stream()
-            .filter(participation -> participation.getParticipant().getId().equals(username))
+        if (currentMeetup == null) {
+            throw new IllegalStateException("No meetup in context to verify the participation status");
+        }
+        Participation p = participationRepository
+            .findByParticipantIdAndMeetupIdOrderByIdAsc(username, currentMeetup.getId()).stream()
             .max(java.util.Comparator.comparing(Participation::getId))
             .orElseThrow(() -> new RuntimeException("No participation found for " + username + " to verify status"));
 
