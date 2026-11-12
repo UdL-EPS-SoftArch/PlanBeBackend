@@ -77,14 +77,14 @@ public class MeetupStepDefs {
     }
 
     @Then("The meetup {string} is organized by {string}")
-    public void the_meetup_is_organized_by(String title, String username) throws Throwable {
-        Meetup meetup = meetupRepository.findAll().stream()
-                .filter(m -> m.getTitle().equals(title))
-                .findFirst().orElseThrow();
+    public void the_meetup_is_organized_by(String title, String username) {
+        Meetup meetup = meetupRepository.findByTitle(title)
+                .orElseThrow(() -> new AssertionError("Meetup \"" + title + "\" not found"));
 
-        if (meetup.getOrganizer() == null || !username.equals(meetup.getOrganizer().getId())) {
+        String actualOrganizer = meetup.getOrganizer() == null ? null : meetup.getOrganizer().getId();
+        if (!username.equals(actualOrganizer)) {
             throw new AssertionError("Expected meetup \"" + title + "\" to be organized by " + username
-                    + " but was " + (meetup.getOrganizer() == null ? null : meetup.getOrganizer().getId()));
+                    + " but was " + actualOrganizer);
         }
     }
 
