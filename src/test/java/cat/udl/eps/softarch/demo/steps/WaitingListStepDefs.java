@@ -140,7 +140,7 @@ public class WaitingListStepDefs {
     }
 
     private ParticipationStatus statusOf(String username) {
-        return participationRepository.findByParticipantIdAndMeetupId(username, currentMeetup.getId())
+        return participationRepository.findLatestByParticipantIdAndMeetupId(username, currentMeetup.getId())
                 .orElseThrow().getStatus();
     }
 

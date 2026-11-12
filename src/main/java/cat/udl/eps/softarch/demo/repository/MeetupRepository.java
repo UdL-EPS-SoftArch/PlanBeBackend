@@ -56,6 +56,8 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
     @Query("select m from Meetup m where m.organizer.id = ?1 and (" + VISIBILITY_CLAUSE + ")")
     List<Meetup> findByOrganizerAndVisibility(String organizerId);
 
+    // Internal: not exported (#91), the username parameter is ignored in favour of the authenticated user
+    @RestResource(exported = false)
     @Query("select m from Meetup m where m.id = ?1 and (m.organizer.id = ?#{authentication.name} or ?#{hasRole('ADMIN')} = true)")
     Optional<Meetup> findByIdAndOwner(Long id, String username);
 
@@ -72,12 +74,14 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
     @PreAuthorize("@meetupSecurity.canSave(#entity)")
     <S extends Meetup> S save(S entity);
 
+    // Internal write query: never exported as a GET search (#91)
+    @RestResource(exported = false)
     @Modifying
     @Query("update Meetup m set m.status = :status where m.id = :id")
     void updateStatus(@Param("id") Long id, @Param("status") MeetupStatus status);
 
     @Override
-    @PreAuthorize("hasRole('ADMIN') or #entity.organizer.id == authentication.name")
+    @PreAuthorize("@meetupSecurity.canDelete(#entity)")
     void delete(Meetup entity);
 
     @RestResource(exported = false)

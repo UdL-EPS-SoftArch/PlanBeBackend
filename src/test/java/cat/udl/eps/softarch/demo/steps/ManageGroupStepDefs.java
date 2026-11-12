@@ -73,7 +73,7 @@ public class ManageGroupStepDefs {
 
     @When("I retrieve the group with name {string}")
     public void iRetrieveGroupByName(String name) throws Throwable {
-        Group group = groupRepository.findByName(name).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(name).stream().findFirst().orElseThrow();
         stepDefs.result = stepDefs.mockMvc.perform(
                 get(group.getUri())
                     .accept(MediaType.APPLICATION_JSON)
@@ -83,7 +83,7 @@ public class ManageGroupStepDefs {
 
     @When("I edit the group with name {string} to have name {string}")
     public void iEditGroupName(String currentName, String newName) throws Throwable {
-        Group group = groupRepository.findByName(currentName).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(currentName).stream().findFirst().orElseThrow();
         stepDefs.result = stepDefs.mockMvc.perform(
                 patch(group.getUri())
                     .contentType(MediaType.APPLICATION_JSON)
@@ -96,7 +96,7 @@ public class ManageGroupStepDefs {
 
     @When("I delete the group with name {string}")
     public void iDeleteGroupByName(String name) throws Throwable {
-        Group group = groupRepository.findByName(name).stream().findFirst().orElseThrow();
+        Group group = groupRepository.findAllByName(name).stream().findFirst().orElseThrow();
         stepDefs.result = stepDefs.mockMvc.perform(
                 delete(group.getUri())
                     .with(AuthenticationStepDefs.authenticate()))

@@ -122,7 +122,7 @@ public class GroupMeetupStepDefs {
     }
 
     private Group group(String name) {
-        return groupRepository.findByName(name).stream().findFirst()
+        return groupRepository.findAllByName(name).stream().findFirst()
             .orElseThrow(() -> new AssertionError("No group named " + name));
     }
 }
