@@ -11,7 +11,6 @@ import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -26,6 +25,8 @@ public class JoinMeetupStepDefs {
     private final UserRepository userRepository;
     private final ParticipationRepository participationRepository;
     private Meetup currentMeetup;
+    /** User whose participation the scenario is about: the one logged in when joining/leaving. */
+    private String participantUsername;
 
     public JoinMeetupStepDefs(StepDefs stepDefs, MeetupRepository meetupRepository, UserRepository userRepository,
                               ParticipationRepository participationRepository) {
@@ -35,17 +36,10 @@ public class JoinMeetupStepDefs {
         this.participationRepository = participationRepository;
     }
 
-    @Given("I am logged in as {string}")
-    public void iAmLoggedInAs(String username) {
-        // Ensure the user exists in the database so the EventHandler doesn't throw 404
-        if (!userRepository.existsById(username)) {
-            User user = new User();
-            user.setId(username);
-            user.setPassword("password123");
-            user.setEmail(username + "@sample.app");
-            user.encodePassword();
-            userRepository.save(user);
-        }
+    private String currentUsername() {
+        return AuthenticationStepDefs.currentUsername != null && !AuthenticationStepDefs.currentUsername.isEmpty()
+            ? AuthenticationStepDefs.currentUsername
+            : stepDefs.currentUser;
     }
 
     public void theMeetupIsAlreadyFull(String title) {
@@ -75,15 +69,9 @@ public class JoinMeetupStepDefs {
     @Given("I have joined the meetup {string}")
     public void iHaveJoinedTheMeetup(String title) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        // Assuming "user1" is the current user for these scenarios
-        User user = userRepository.findById("user1").orElseGet(() -> {
-            User newUser = new User();
-            newUser.setId("user1");
-            newUser.setPassword("password123");
-            newUser.setEmail("user1@sample.app");
-            newUser.encodePassword();
-            return userRepository.save(newUser);
-        });
+        String username = currentUsername();
+        User user = userRepository.findById(username)
+            .orElseThrow(() -> new IllegalStateException("No logged in user to join the meetup"));
 
         Participation p = new Participation();
         p.setParticipant(user);
@@ -91,6 +79,7 @@ public class JoinMeetupStepDefs {
         p.setStatus(ParticipationStatus.CONFIRMED);
         p.setJoinedAt(java.time.Instant.now());
         participationRepository.save(p);
+        participantUsername = username;
     }
 
     @When("I join the meetup {string}")
@@ -99,26 +88,29 @@ public class JoinMeetupStepDefs {
         String body = "{\"meetup\": \"/meetups/" + meetup.getId() + "\" }";
 
         stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.post("/participations")
-                .with(SecurityMockMvcRequestPostProcessors.user("user1"))
+                .with(AuthenticationStepDefs.authenticate())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
+        participantUsername = currentUsername();
     }
 
     @When("I leave the meetup {string}")
     public void iLeaveTheMeetup(String title) throws Exception {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        Optional<Participation> p = participationRepository.findByParticipantIdAndMeetupId("user1", meetup.getId());
+        String username = currentUsername();
+        Optional<Participation> p = participationRepository.findByParticipantIdAndMeetupId(username, meetup.getId());
 
         if (p.isEmpty()) {
-            throw new RuntimeException("Participation not found for user1 and meetup " + title);
+            throw new RuntimeException("Participation not found for " + username + " and meetup " + title);
         }
 
         String body = "{\"status\": \"CANCELLED\"}";
 
         stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.patch("/participations/" + p.get().getId())
-                .with(SecurityMockMvcRequestPostProcessors.user("user1"))
+                .with(AuthenticationStepDefs.authenticate())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
+        participantUsername = username;
     }
 
     public void aMeetupExistsWithCapacityForJoin(Integer capacity) {
@@ -137,12 +129,13 @@ public class JoinMeetupStepDefs {
 
     @Then("the participation status is {string}")
     public void the_participation_status_is(String status) {
-        // We verify the status directly in the database (DatabaseCleanupHooks guarantees one meetup per user1
-        // scenario). A user who left and joined again keeps the old row, so the current one is the latest.
+        // We verify the status directly in the database. A user who left and joined again keeps the old row,
+        // so the current one is the latest.
+        String username = participantUsername != null ? participantUsername : currentUsername();
         Participation p = participationRepository.findAll().stream()
-            .filter(participation -> participation.getParticipant().getId().equals("user1"))
+            .filter(participation -> participation.getParticipant().getId().equals(username))
             .max(java.util.Comparator.comparing(Participation::getId))
-            .orElseThrow(() -> new RuntimeException("No participation found for user1 to verify status"));
+            .orElseThrow(() -> new RuntimeException("No participation found for " + username + " to verify status"));
 
         if (!p.getStatus().name().equals(status)) {
             throw new AssertionError("Expected status " + status + " but was " + p.getStatus().name());
@@ -152,8 +145,9 @@ public class JoinMeetupStepDefs {
     @Then("my earlier participation in the meetup {string} is kept as {string}")
     public void my_earlier_participation_in_the_meetup_is_kept_as(String title, String status) {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
+        String username = participantUsername != null ? participantUsername : currentUsername();
         java.util.List<Participation> history =
-            participationRepository.findByParticipantIdAndMeetupIdOrderByIdAsc("user1", meetup.getId());
+            participationRepository.findByParticipantIdAndMeetupIdOrderByIdAsc(username, meetup.getId());
         if (history.size() != 2 || !history.get(0).getStatus().name().equals(status)) {
             throw new AssertionError("Expected 2 participations, the first one " + status + ", but got "
                 + history.stream().map(p -> p.getStatus().name()).toList());
@@ -172,12 +166,11 @@ public class JoinMeetupStepDefs {
     @When("the organizer cancels the meetup {string}")
     public void theOrganizerCancelsTheMeetup(String title) throws Exception {
         Meetup meetup = meetupRepository.findByTitle(title).orElseThrow();
-        String organizer = meetup.getOrganizer().getId();
 
         String body = "{\"status\": \"CANCELLED\"}";
 
         stepDefs.result = stepDefs.mockMvc.perform(MockMvcRequestBuilders.patch("/meetups/" + meetup.getId())
-                .with(SecurityMockMvcRequestPostProcessors.user(organizer))
+                .with(AuthenticationStepDefs.authenticate())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(body));
     }

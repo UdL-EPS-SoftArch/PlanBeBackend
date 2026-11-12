@@ -28,11 +28,12 @@ public class AuthenticationStepDefs {
     }
 
     static RequestPostProcessor authenticate() {
-        return currentUsername!=null ? httpBasic(currentUsername, currentPassword) : anonymous();
+        return (currentUsername != null && !currentUsername.isEmpty())
+            ? httpBasic(currentUsername, currentPassword)
+            : anonymous();
     }
 
-    @Given("^I login as \"([^\"]*)\" with password \"([^\"]*)\"$")
-    public void iLoginAsWithPassword(String username, String password) {
+    private void ensureUserExists(String username, String password) {
         // Ensure the user exists in the database to avoid 401 Unauthorized during tests
         if (!userRepository.existsById(username)) {
             User user = new User();
@@ -42,6 +43,11 @@ public class AuthenticationStepDefs {
             user.encodePassword();
             userRepository.save(user);
         }
+    }
+
+    @Given("^I login as \"([^\"]*)\" with password \"([^\"]*)\"$")
+    public void iLoginAsWithPassword(String username, String password) {
+        ensureUserExists(username, password);
         AuthenticationStepDefs.currentUsername = username;
         AuthenticationStepDefs.currentPassword = password;
         stepDefs.currentUser = username;
@@ -49,6 +55,7 @@ public class AuthenticationStepDefs {
 
     @Given("^I'm logged in as \"([^\"]*)\"$")
     public void iMLoggedInAs(String username) {
+        ensureUserExists(username, "password");
         AuthenticationStepDefs.currentUsername = username;
         AuthenticationStepDefs.currentPassword = "password";
         stepDefs.currentUser = username;

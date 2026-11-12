@@ -83,12 +83,13 @@ public class WaitingListStepDefs {
 
     @When("I join the meetup")
     public void iJoinTheMeetup() throws Exception {
-        existingUser("me");
+        String username = AuthenticationStepDefs.currentUsername;
+        existingUser(username);
         String json = "{\"meetup\": \"/meetups/" + currentMeetup.getId() + "\"}";
         stepDefs.result = stepDefs.mockMvc.perform(post("/participations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json)
-                .with(user("me")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @When("a participant leaves the meetup")
@@ -130,7 +131,7 @@ public class WaitingListStepDefs {
 
     @Then("my participation status should be {string}")
     public void myParticipationStatusShouldBe(String status) {
-        assertEquals(ParticipationStatus.valueOf(status), statusOf("me"));
+        assertEquals(ParticipationStatus.valueOf(status), statusOf(AuthenticationStepDefs.currentUsername));
     }
 
     @Then("the waiting user status should be {string}")

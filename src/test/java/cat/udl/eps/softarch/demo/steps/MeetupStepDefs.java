@@ -37,6 +37,7 @@ public class MeetupStepDefs {
             user.setId(row.get("username"));
             user.setPassword(User.passwordEncoder.encode(row.get("password")));
             user.setEmail(row.get("username") + "@example.com");
+            user.setAdmin("ADMIN".equalsIgnoreCase(row.getOrDefault("role", "USER")));
             userRepository.save(user);
         }
     }
@@ -72,13 +73,19 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(post("/meetups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("organizer").roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Then("The meetup {string} is organized by {string}")
     public void the_meetup_is_organized_by(String title, String username) throws Throwable {
-        stepDefs.mockMvc.perform(get("/meetups"))
-                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')]._links.organizer").exists());
+        Meetup meetup = meetupRepository.findAll().stream()
+                .filter(m -> m.getTitle().equals(title))
+                .findFirst().orElseThrow();
+
+        if (meetup.getOrganizer() == null || !username.equals(meetup.getOrganizer().getId())) {
+            throw new AssertionError("Expected meetup \"" + title + "\" to be organized by " + username
+                    + " but was " + (meetup.getOrganizer() == null ? null : meetup.getOrganizer().getId()));
+        }
     }
 
     @Given("a meetup {string} exists organized by {string}")
@@ -122,7 +129,7 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(patch("/meetups/" + meetup.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(meetup.getOrganizer().getId()).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Then("the meetup {string} now has title {string}")
@@ -138,7 +145,7 @@ public class MeetupStepDefs {
                 .findFirst().orElseThrow();
 
         stepDefs.result = stepDefs.mockMvc.perform(delete("/meetups/" + meetup.getId())
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(meetup.getOrganizer().getId()).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Then("the meetup {string} no longer exists")
@@ -156,14 +163,6 @@ public class MeetupStepDefs {
 
     @When("I create a meetup with title {string}")
     public void i_create_a_meetup_with_title(String title) throws Throwable {
-        User organizer = userRepository.findById("organizer").orElseGet(() -> {
-            User u = new User();
-            u.setId("organizer");
-            u.setPassword(User.passwordEncoder.encode("password"));
-            u.setEmail("organizer@example.com");
-            return userRepository.save(u);
-        });
-
         Map<String, Object> body = new HashMap<>();
         body.put("title", title);
         body.put("startDate", Instant.now().plusSeconds(3600));
@@ -173,7 +172,7 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(post("/meetups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("organizer").roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Given("the following meetups exist:")
@@ -390,7 +389,7 @@ public class MeetupStepDefs {
                 .findFirst().orElseThrow();
 
         stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/" + meetup.getId())
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(stepDefs.currentUser).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @When("I update the meetup {string} status to {string}")
@@ -405,7 +404,7 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(patch("/meetups/" + meetup.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(stepDefs.currentUser).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 }
 

@@ -16,8 +16,8 @@ Feature: Manage Meetups
       | title       | Pàdel Match |
       | description | Let's play padel! |
       | capacity    | 4           |
-      | startDate   | 2026-11-01T10:00:00Z |
-      | endDate     | 2026-11-01T12:00:00Z |
+      | startDate   | 2027-11-01T10:00:00Z |
+      | endDate     | 2027-11-01T12:00:00Z |
       | locName     | Club Padel |
       | locAddress  | Street 1 |
       | locCity     | City A |
@@ -60,8 +60,8 @@ Feature: Manage Meetups
     Given I login as "organizer" with password "password"
     When I create a new meetup with the following details:
       | title       | Invalid Dates |
-      | startDate   | 2026-11-01T10:00:00Z |
-      | endDate     | 2026-11-01T08:00:00Z |
+      | startDate   | 2027-11-01T10:00:00Z |
+      | endDate     | 2027-11-01T08:00:00Z |
     Then The response code is 400
 
   Scenario: Organizer can edit their own meetup
@@ -82,13 +82,13 @@ Feature: Manage Meetups
     Given I login as "otherUser" with password "password"
     And a meetup "Someone Else's Event" exists organized by "organizer"
     When I update the meetup "Someone Else's Event" with title "Hacked Title"
-    Then The response code is 204
+    Then The response code is 403
 
   Scenario: Other user cannot delete someone else's meetup
     Given I login as "otherUser" with password "password"
     And a meetup "Someone Else's Event" exists organized by "organizer"
     When I delete the meetup "Someone Else's Event"
-    Then The response code is 204
+    Then The response code is 403
 
   Scenario: Admin can edit any meetup
     Given I login as "admin" with password "password"

@@ -32,7 +32,7 @@ Feature: Moderation
   Scenario: Blocked user cannot join the blocker's meetup
     Given There is a public meetup with title "Blocker Party" organized by "blocker" and capacity 5
     And "blocker" has already blocked "user1"
-    And I am logged in as "user1"
+    And I login as "user1" with password "password123"
     When I join the meetup "Blocker Party"
     Then The response code is 403
     And "user1" has no participation in the meetup "Blocker Party"
