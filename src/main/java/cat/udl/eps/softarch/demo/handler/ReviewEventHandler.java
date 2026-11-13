@@ -41,14 +41,14 @@ public class ReviewEventHandler {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         review.setReviewer(reviewer);
 
-        if (meetup.getStatus() != MeetupStatus.FINISHED) {
+        if (!MeetupStatus.FINISHED.equals(meetup.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                 "Cannot review a meetup that is not finished");
         }
 
         boolean confirmedParticipant = participationRepository
             .findLatestByParticipantIdAndMeetupId(reviewer.getId(), meetup.getId())
-            .map(p -> p.getStatus() == ParticipationStatus.CONFIRMED)
+            .map(p -> ParticipationStatus.CONFIRMED.equals(p.getStatus()))
             .orElse(false);
         if (!confirmedParticipant) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,

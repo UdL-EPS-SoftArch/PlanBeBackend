@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -27,7 +26,7 @@ import java.util.Set;
 public class WaitingList {
 
     private static final Logger log = LoggerFactory.getLogger(WaitingList.class);
-    private static final Set<MeetupStatus> CLOSED = EnumSet.of(MeetupStatus.CANCELLED, MeetupStatus.FINISHED);
+    private static final Set<MeetupStatus> CLOSED = Set.of(MeetupStatus.CANCELLED, MeetupStatus.FINISHED);
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -83,7 +82,7 @@ public class WaitingList {
             log.warn("Meetup {} has {} confirmed participants for a capacity of {}", meetupId, confirmed,
                 meetup.getCapacity());
         }
-        if (meetup.getStatus() == MeetupStatus.OPEN || meetup.getStatus() == MeetupStatus.FULL) {
+        if (MeetupStatus.OPEN.equals(meetup.getStatus()) || MeetupStatus.FULL.equals(meetup.getStatus())) {
             // Managed, fresh and locked instance; @DynamicUpdate writes only the status column.
             meetup.setStatus(confirmed >= meetup.getCapacity() ? MeetupStatus.FULL : MeetupStatus.OPEN);
         }

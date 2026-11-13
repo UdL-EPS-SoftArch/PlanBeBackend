@@ -12,7 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.stereotype.Component;
 
 import java.security.Principal;
-import java.util.EnumSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,7 +69,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             Long meetupId = extractMeetupId(destination);
             if (meetupId != null) {
                 boolean confirmed = participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(
-                        username, meetupId, EnumSet.of(ParticipationStatus.CONFIRMED));
+                        username, meetupId, Set.of(ParticipationStatus.CONFIRMED));
                 if (!confirmed) {
                     throw new org.springframework.security.access.AccessDeniedException("Not authorized");
                 }
@@ -79,7 +79,7 @@ public class WebSocketAuthInterceptor implements ChannelInterceptor {
             Long meetupId = extractMeetupId(destination);
             if (meetupId != null) {
                 boolean confirmed = participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(
-                        username, meetupId, EnumSet.of(ParticipationStatus.CONFIRMED));
+                        username, meetupId, Set.of(ParticipationStatus.CONFIRMED));
                 if (!confirmed) {
                     throw new org.springframework.security.access.AccessDeniedException("Not authorized");
                 }

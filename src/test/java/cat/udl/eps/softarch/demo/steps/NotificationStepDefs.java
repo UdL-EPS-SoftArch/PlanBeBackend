@@ -101,7 +101,7 @@ public class NotificationStepDefs {
         participation.setStatus(ParticipationStatus.valueOf(status));
         participation.setJoinedAt(Instant.now());
         participationRepository.save(participation);
-        if (meetup.getStatus() == MeetupStatus.OPEN || meetup.getStatus() == MeetupStatus.FULL) {
+        if (MeetupStatus.OPEN.equals(meetup.getStatus()) || MeetupStatus.FULL.equals(meetup.getStatus())) {
             long confirmed = participationRepository.countByMeetupIdAndStatus(meetup.getId(), ParticipationStatus.CONFIRMED);
             meetup.setStatus(confirmed >= meetup.getCapacity() ? MeetupStatus.FULL : MeetupStatus.OPEN);
             RunAs.admin(() -> meetupRepository.save(meetup));

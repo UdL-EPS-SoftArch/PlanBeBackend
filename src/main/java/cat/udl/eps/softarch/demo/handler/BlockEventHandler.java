@@ -26,7 +26,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.EnumSet;
+import java.util.Set;
 
 /**
  * #48 Block users. The authenticated user is always the blocker. A block is never modified:
@@ -94,22 +94,22 @@ public class BlockEventHandler {
      * Finished and cancelled meetups are history and are not touched.
      */
     private void removeFromBlockerMeetups(String blockerId, String blockedId) {
-        EnumSet<MeetupStatus> notEnded = EnumSet.of(MeetupStatus.DRAFT, MeetupStatus.OPEN, MeetupStatus.FULL);
+        Set<MeetupStatus> notEnded = Set.of(MeetupStatus.DRAFT, MeetupStatus.OPEN, MeetupStatus.FULL);
         transactionTemplate.executeWithoutResult(transaction -> {
             for (Participation participation : participationRepository
                     .findByParticipantIdAndMeetupOrganizerIdAndStatusInAndMeetupStatusIn(blockedId, blockerId,
-                        EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING), notEnded)) {
-                boolean wasConfirmed = participation.getStatus() == ParticipationStatus.CONFIRMED;
+                        Set.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING), notEnded)) {
+                boolean wasConfirmed = ParticipationStatus.CONFIRMED.equals(participation.getStatus());
                 participation.setStatus(ParticipationStatus.CANCELLED);
                 participationRepository.save(participation);
                 MeetupStatus meetupStatus = participation.getMeetup().getStatus();
-                if (wasConfirmed && (meetupStatus == MeetupStatus.OPEN || meetupStatus == MeetupStatus.FULL)) {
+                if (wasConfirmed && (MeetupStatus.OPEN.equals(meetupStatus) || MeetupStatus.FULL.equals(meetupStatus))) {
                     waitingList.fillFreeSpots(participation.getMeetup().getId());
                 }
             }
             for (Invitation invitation : invitationRepository
                     .findByInviteeIdAndMeetupOrganizerIdAndStatusInAndMeetupStatusIn(blockedId, blockerId,
-                        EnumSet.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED), notEnded)) {
+                        Set.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED), notEnded)) {
                 invitation.setStatus(InvitationStatus.DECLINED);
                 invitationRepository.save(invitation);
             }

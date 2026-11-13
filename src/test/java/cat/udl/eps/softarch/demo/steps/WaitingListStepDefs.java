@@ -96,7 +96,7 @@ public class WaitingListStepDefs {
     public void aParticipantLeavesTheMeetup() throws Exception {
         Participation p = participationRepository.findAll().stream()
                 .filter(p1 -> p1.getMeetup().getId().equals(currentMeetup.getId()))
-                .filter(p1 -> p1.getStatus() == ParticipationStatus.CONFIRMED)
+                .filter(p1 -> ParticipationStatus.CONFIRMED.equals(p1.getStatus()))
                 .min(Comparator.comparing(Participation::getId))
                 .orElseThrow();
         stepDefs.result = stepDefs.mockMvc.perform(delete("/participations/" + p.getId())
@@ -115,7 +115,7 @@ public class WaitingListStepDefs {
         TransactionSynchronizationManager.bindResource(entityManagerFactory, new EntityManagerHolder(entityManager));
         try {
             entityManager.find(Meetup.class, meetupId);   // loaded as OPEN by "this" request
-            jdbcTemplate.update("update meetup set status = 'CANCELLED' where id = ?", meetupId);   // the other one
+            jdbcTemplate.update("update meetup set status_id = 'CANCELLED' where id = ?", meetupId);   // the other one
             waitingList.fillFreeSpots(meetupId);
         } finally {
             TransactionSynchronizationManager.unbindResource(entityManagerFactory);
