@@ -28,14 +28,14 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
         "or m.organizer.id = ?#{authentication.name} " +
         "or ?#{hasRole('ADMIN')} = true " +
         "or exists (select i from Invitation i where i.meetup = m and i.invitee.id = ?#{authentication.name} " +
-        "and i.status in (InvitationStatus.PENDING, " +
-        "InvitationStatus.ACCEPTED)) " +
+        "and i.status.id in ('PENDING', " +
+        "'ACCEPTED')) " +
         "or exists (select p from Participation p where p.meetup = m and p.participant.id = ?#{authentication.name} " +
-        "and p.status in (ParticipationStatus.CONFIRMED, " +
-        "ParticipationStatus.WAITING)) " +
+        "and p.status.id in ('CONFIRMED', " +
+        "'WAITING')) " +
         "or exists (select ms from Membership ms where ms.group.id = m.group.id " +
         "and ms.member.id = ?#{authentication.name} " +
-        "and ms.status = MembershipStatus.ACTIVE)";
+        "and ms.status.id = 'ACTIVE')";
 
     @Override
     @Query("select m from Meetup m where " + VISIBILITY_CLAUSE)
@@ -44,8 +44,8 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
     @Query("select m from Meetup m where " + VISIBILITY_CLAUSE)
     List<Meetup> findVisibleMeetups();
 
-    @Query("select m from Meetup m where m.category = ?1 and (" + VISIBILITY_CLAUSE + ")")
-    List<Meetup> findByCategoryAndVisibility(cat.udl.eps.softarch.demo.domain.enums.Category category);
+    @Query("select m from Meetup m where m.category.id = ?1 and (" + VISIBILITY_CLAUSE + ")")
+    List<Meetup> findByCategoryAndVisibility(String category);
 
     @Query("select m from Meetup m where m.location.city = ?1 and (" + VISIBILITY_CLAUSE + ")")
     List<Meetup> findByCityAndVisibility(String city);
@@ -100,15 +100,15 @@ public interface MeetupRepository extends JpaRepository<Meetup, Long> {
      * user's interests, either as a tag or through the interest's category. Excludes the meetups the user
      * organizes or has already joined. Soonest first.
      */
-    @Query("select m from Meetup m where m.visibility = 'PUBLIC' and m.status = 'OPEN' "
+    @Query("select m from Meetup m where m.visibility = 'PUBLIC' and m.status.id = 'OPEN' "
         + "and m.startDate > current_timestamp "
         + "and lower(m.location.city) = (select lower(u.city) from User u where u.id = ?#{authentication.name}) "
         + "and exists (select i from User u join u.interests i where u.id = ?#{authentication.name} "
         + "and (i member of m.tags or (i.category is not null and i.category = m.category))) "
         + "and (m.organizer is null or m.organizer.id <> ?#{authentication.name}) "
         + "and not exists (select p from Participation p where p.meetup = m and p.participant.id = ?#{authentication.name} "
-        + "and p.status in (cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus.CONFIRMED, "
-        + "cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus.WAITING)) "
+        + "and p.status.id in ('CONFIRMED', "
+        + "'WAITING')) "
         + "order by m.startDate asc")
     List<Meetup> recommended();
 }

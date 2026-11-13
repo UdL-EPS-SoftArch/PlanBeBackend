@@ -1,10 +1,12 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.entities.CatalogEntityDeserializer;
 import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.GroupRole;
 import cat.udl.eps.softarch.demo.domain.enums.MembershipStatus;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -18,6 +20,7 @@ import jakarta.persistence.PostLoad;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import jakarta.persistence.UniqueConstraint;
+import org.springframework.data.rest.core.annotation.RestResource;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -53,8 +56,10 @@ public class Membership extends UriEntity<Long> {
     @Column(nullable = false)
     private GroupRole role;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "status_id", nullable = false)
+    @JsonDeserialize(using = CatalogEntityDeserializer.class)
+    @RestResource(exported = false)
     private MembershipStatus status;
 
     @Column(nullable = false)

@@ -16,7 +16,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
-import java.util.EnumSet;
+import java.util.Set;
 
 @Controller
 public class ChatMessageWebSocketController {
@@ -47,7 +47,7 @@ public class ChatMessageWebSocketController {
         String username = principal.getName();
         Meetup meetup = meetupRepository.findById(meetupId).orElseThrow(() -> new AccessDeniedException("Not authorized"));
         boolean confirmed = participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(
-                username, meetupId, EnumSet.of(ParticipationStatus.CONFIRMED));
+                username, meetupId, Set.of(ParticipationStatus.CONFIRMED));
         if (!confirmed) {
             throw new AccessDeniedException("Not authorized");
         }

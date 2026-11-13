@@ -1,10 +1,12 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.entities.CatalogEntityDeserializer;
 import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.ReportStatus;
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -15,6 +17,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.data.rest.core.annotation.RestResource;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.Instant;
@@ -58,8 +61,10 @@ public class Report extends UriEntity<Long> {
     private String reason;
 
     /** OPEN when created, whatever the client sends; only an ADMIN changes it. */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "status_id", nullable = false)
+    @JsonDeserialize(using = CatalogEntityDeserializer.class)
+    @RestResource(exported = false)
     private ReportStatus status;
 
     @DateTimeFormat

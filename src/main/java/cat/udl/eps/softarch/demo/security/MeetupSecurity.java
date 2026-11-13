@@ -18,7 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.EnumSet;
+import java.util.Set;
 import java.util.Optional;
 
 @Component("meetupSecurity")
@@ -101,7 +101,7 @@ public class MeetupSecurity {
         if (group == null || group.getId() == null || username == null) return false;
         if (group.getOwnedBy() != null && username.equals(group.getOwnedBy().getId())) return true;
         return membershipRepository.findByGroupIdAndMemberId(group.getId(), username)
-            .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
+            .filter(membership -> MembershipStatus.ACTIVE.equals(membership.getStatus()))
             .isPresent();
     }
 
@@ -110,7 +110,7 @@ public class MeetupSecurity {
         if (group == null || group.getId() == null || username == null) return false;
         if (group.getOwnedBy() != null && username.equals(group.getOwnedBy().getId())) return true;
         return membershipRepository.findByGroupIdAndMemberId(group.getId(), username)
-            .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
+            .filter(membership -> MembershipStatus.ACTIVE.equals(membership.getStatus()))
             .map(Membership::getRole)
             .filter(role -> role == GroupRole.OWNER || role == GroupRole.ADMIN)
             .isPresent();
@@ -119,8 +119,8 @@ public class MeetupSecurity {
     /** Invitees with a PENDING or ACCEPTED invitation and active participants see the meetup (#28). */
     private boolean isInvitedOrParticipant(Long meetupId, String username) {
         return invitationRepository.existsByMeetupIdAndInviteeIdAndStatusIn(meetupId, username,
-                EnumSet.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED))
+                Set.of(InvitationStatus.PENDING, InvitationStatus.ACCEPTED))
             || participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(username, meetupId,
-                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING));
+                Set.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING));
     }
 }
