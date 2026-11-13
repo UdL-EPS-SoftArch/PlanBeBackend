@@ -25,7 +25,6 @@ import java.time.Instant;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -194,7 +193,7 @@ public class InviteToMeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(
                 get("/meetups/search/findVisibleMeetups")
                     .accept(MediaType.APPLICATION_JSON)
-                    .with(user(stepDefs.currentUser).roles("USER")))
+                    .with(AuthenticationStepDefs.authenticate()))
             .andDo(print());
     }
 

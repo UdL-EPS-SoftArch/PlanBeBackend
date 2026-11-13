@@ -22,7 +22,7 @@ public class Invitation extends UriEntity<Long> {
 
     @ManyToOne
     @JsonIdentityReference(alwaysAsId = true)
-    private User invitee;
+    private User invitee;   
 
     @ManyToOne
     @JsonIdentityReference(alwaysAsId = true)
