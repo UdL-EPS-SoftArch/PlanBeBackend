@@ -1,8 +1,10 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.entities.CatalogEntityDeserializer;
 import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -10,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.time.Instant;
 
@@ -35,8 +38,10 @@ public class Participation extends UriEntity<Long> {
     @JoinColumn(name = "meetup_id", nullable = false)
     private Meetup meetup;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "status_id", nullable = false)
+    @JsonDeserialize(using = CatalogEntityDeserializer.class)
+    @RestResource(exported = false)
     private ParticipationStatus status;
 
     /** TRUE while the participation is CONFIRMED or WAITING, NULL when CANCELLED (see the unique constraint). */
@@ -57,7 +62,7 @@ public class Participation extends UriEntity<Long> {
     @PrePersist
     @PreUpdate
     void syncActiveSlot() {
-        activeSlot = status == null || status == ParticipationStatus.CANCELLED ? null : Boolean.TRUE;
+        activeSlot = status == null || ParticipationStatus.CANCELLED.equals(status) ? null : Boolean.TRUE;
     }
 
     /** State as loaded from the database, used by ParticipationEventHandler to detect transitions. */

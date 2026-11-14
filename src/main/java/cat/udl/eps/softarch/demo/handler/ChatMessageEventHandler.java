@@ -14,7 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.EnumSet;
+import java.util.Set;
 
 @Component
 @RepositoryEventHandler
@@ -44,7 +44,7 @@ public class ChatMessageEventHandler {
         }
 
         boolean confirmed = participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(
-            username, meetup.getId(), EnumSet.of(ParticipationStatus.CONFIRMED));
+            username, meetup.getId(), Set.of(ParticipationStatus.CONFIRMED));
         if (!confirmed) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Meetup not found");
         }

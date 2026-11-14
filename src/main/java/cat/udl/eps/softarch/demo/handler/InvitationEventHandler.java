@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.EnumSet;
+import java.util.Set;
 
 @Component
 @RepositoryEventHandler
@@ -107,29 +107,29 @@ public class InvitationEventHandler {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the invitee can answer the invitation");
         }
 
-        if (invitationRepository.findStoredStatusById(invitation.getId()) != InvitationStatus.PENDING) {
+        if (!InvitationStatus.PENDING.equals(invitationRepository.findStoredStatusById(invitation.getId()))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Invitation already answered");
         }
 
-        if (invitation.getStatus() != InvitationStatus.ACCEPTED && invitation.getStatus() != InvitationStatus.DECLINED) {
+        if (!InvitationStatus.ACCEPTED.equals(invitation.getStatus()) && !InvitationStatus.DECLINED.equals(invitation.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invitation must be ACCEPTED or DECLINED");
         }
 
         // #48: blocked after being invited: accepting would join the blocker's meetup
         User organizer = invitation.getMeetup().getOrganizer();
-        if (invitation.getStatus() == InvitationStatus.ACCEPTED && organizer != null
+        if (InvitationStatus.ACCEPTED.equals(invitation.getStatus()) && organizer != null
                 && blockRepository.existsByBlockerIdAndBlockedId(organizer.getId(), currentUsername)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "The organizer of this meetup has blocked you");
         }
 
-        if (invitation.getStatus() == InvitationStatus.ACCEPTED && isClosed(invitation.getMeetup())) {
+        if (InvitationStatus.ACCEPTED.equals(invitation.getStatus()) && isClosed(invitation.getMeetup())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot accept an invitation to a cancelled or finished meetup");
         }
     }
 
     @HandleAfterSave
     public void handleInvitationPostSave(Invitation invitation) {
-        if (invitation.getStatus() != InvitationStatus.ACCEPTED) {
+        if (!InvitationStatus.ACCEPTED.equals(invitation.getStatus())) {
             return;
         }
 
@@ -138,7 +138,7 @@ public class InvitationEventHandler {
         Meetup meetup = invitation.getMeetup();
         String inviteeId = invitation.getInvitee().getId();
         if (participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(inviteeId, meetup.getId(),
-                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))) {
+                Set.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))) {
             return;
         }
 
@@ -159,6 +159,6 @@ public class InvitationEventHandler {
     }
 
     private boolean isClosed(Meetup meetup) {
-        return meetup.getStatus() == MeetupStatus.CANCELLED || meetup.getStatus() == MeetupStatus.FINISHED;
+        return MeetupStatus.CANCELLED.equals(meetup.getStatus()) || MeetupStatus.FINISHED.equals(meetup.getStatus());
     }
 }

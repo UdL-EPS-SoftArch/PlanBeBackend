@@ -56,7 +56,7 @@ public class NotificationEventHandler {
         }
         String recipientId = notification.getRecipient() == null ? null : notification.getRecipient().getId();
         boolean onlyReadChanged = Objects.equals(before.recipientId(), recipientId)
-            && before.type() == notification.getType()
+            && Objects.equals(before.type(), notification.getType())
             && Objects.equals(before.message(), notification.getMessage())
             && Objects.equals(before.targetUri(), notification.getTargetUri())
             && Objects.equals(before.created(), notification.getCreated());

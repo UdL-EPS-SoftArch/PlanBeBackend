@@ -22,11 +22,9 @@ public interface CommentRepository extends CrudRepository<Comment, Long>, Paging
         "or c.meetup.organizer.id = ?#{authentication.name} " +
         "or ?#{hasRole('ADMIN')} = true " +
         "or exists (select i from Invitation i where i.meetup = c.meetup and i.invitee.id = ?#{authentication.name} " +
-        "and i.status in (cat.udl.eps.softarch.demo.domain.enums.InvitationStatus.PENDING, " +
-        "cat.udl.eps.softarch.demo.domain.enums.InvitationStatus.ACCEPTED)) " +
+        "and i.status.id in ('PENDING', 'ACCEPTED')) " +
         "or exists (select p from Participation p where p.meetup = c.meetup and p.participant.id = ?#{authentication.name} " +
-        "and p.status in (cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus.CONFIRMED, " +
-        "cat.udl.eps.softarch.demo.domain.enums.ParticipationStatus.WAITING))";
+        "and p.status.id in ('CONFIRMED', 'WAITING'))";
 
     @Override
     @Query("SELECT c FROM Comment c WHERE " + VISIBILITY_CLAUSE)

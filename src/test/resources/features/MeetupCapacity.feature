@@ -3,14 +3,16 @@ Feature: Meetup Capacity
   As a user, I want the meetup status to reflect its capacity so that I know whether it is full.
 
   Scenario: Last spot fills meetup
-    Given a meetup exists with capacity 2
+    Given I login as "me" with password "password"
+    And a meetup exists with capacity 2
     And 1 user has already joined the meetup
     When I join the meetup
     Then the response code is 201
     And the meetup status should be "FULL"
 
   Scenario: Join full meetup puts user on waiting list
-    Given a meetup exists with capacity 2
+    Given I login as "me" with password "password"
+    And a meetup exists with capacity 2
     And 2 users have already joined the meetup
     When I join the meetup
     Then the response code is 201

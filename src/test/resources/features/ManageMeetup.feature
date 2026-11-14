@@ -16,8 +16,8 @@ Feature: Manage Meetups
       | title       | Pàdel Match |
       | description | Let's play padel! |
       | capacity    | 4           |
-      | startDate   | 2030-11-01T10:00:00Z |
-      | endDate     | 2030-11-01T12:00:00Z |
+      | startDate   | now+1d |
+      | endDate     | now+2d |
       | locName     | Club Padel |
       | locAddress  | Street 1 |
       | locCity     | City A |
@@ -53,16 +53,18 @@ Feature: Manage Meetups
     Given I login as "organizer" with password "password"
     When I create a new meetup with the following details:
       | title       | Past Event |
-      | startDate   | 2020-01-01T10:00:00Z |
+      | startDate   | now-1d |
     Then The response code is 400
+    And The error message is "startDate must be a future date"
 
   Scenario: Cannot create a meetup with end date before start date
     Given I login as "organizer" with password "password"
     When I create a new meetup with the following details:
       | title       | Invalid Dates |
-      | startDate   | 2030-11-01T10:00:00Z |
-      | endDate     | 2030-11-01T08:00:00Z |
+      | startDate   | now+2d |
+      | endDate     | now+1d |
     Then The response code is 400
+    And The error message is "endDate must be after startDate"
 
   Scenario: Organizer can edit their own meetup
     Given I login as "organizer" with password "password"
@@ -82,13 +84,15 @@ Feature: Manage Meetups
     Given I login as "otherUser" with password "password"
     And a meetup "Someone Else's Event" exists organized by "organizer"
     When I update the meetup "Someone Else's Event" with title "Hacked Title"
-    Then The response code is 204
+    Then The response code is 403
+    And the meetup "Someone Else's Event" now has title "Someone Else's Event"
 
   Scenario: Other user cannot delete someone else's meetup
     Given I login as "otherUser" with password "password"
     And a meetup "Someone Else's Event" exists organized by "organizer"
     When I delete the meetup "Someone Else's Event"
-    Then The response code is 204
+    Then The response code is 403
+    And the meetup "Someone Else's Event" still exists
 
   Scenario: Admin can edit any meetup
     Given I login as "admin" with password "password"
@@ -96,6 +100,13 @@ Feature: Manage Meetups
     When I update the meetup "User Event" with title "Admin Modified Title"
     Then The response code is 204
     And the meetup "User Event" now has title "Admin Modified Title"
+
+  Scenario: Admin can delete any meetup
+    Given I login as "admin" with password "password"
+    And a meetup "Admin Deletable" exists organized by "organizer"
+    When I delete the meetup "Admin Deletable"
+    Then The response code is 204
+    And the meetup "Admin Deletable" no longer exists
 
   Scenario: Create meetup with age range and gender target
     Given I login as "organizer" with password "password"

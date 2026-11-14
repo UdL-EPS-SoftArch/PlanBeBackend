@@ -12,6 +12,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.*;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import cat.udl.eps.softarch.demo.domain.enums.Category;
 import cat.udl.eps.softarch.demo.domain.enums.MeetupStatus;
 import cat.udl.eps.softarch.demo.domain.enums.Visibility;
 
@@ -19,6 +23,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class MeetupStepDefs {
+
+    /** Relative dates such as {@code now+1d} keep the suite independent from the real calendar date. */
+    private static final Pattern RELATIVE_INSTANT =
+            Pattern.compile("^now\\s*([+-])\\s*(\\d+)\\s*(m|min|minute|minutes|h|hour|hours|d|day|days)$",
+                    Pattern.CASE_INSENSITIVE);
 
     @Autowired
     private StepDefs stepDefs;
@@ -37,6 +46,7 @@ public class MeetupStepDefs {
             user.setId(row.get("username"));
             user.setPassword(User.passwordEncoder.encode(row.get("password")));
             user.setEmail(row.get("username") + "@example.com");
+            user.setAdmin("ADMIN".equalsIgnoreCase(row.getOrDefault("role", "USER")));
             userRepository.save(user);
         }
     }
@@ -50,9 +60,9 @@ public class MeetupStepDefs {
         if (details.containsKey("description")) body.put("description", details.get("description"));
         if (details.containsKey("capacity")) body.put("capacity", Integer.parseInt(details.get("capacity")));
         else body.put("capacity", 10);
-        if (details.containsKey("startDate")) body.put("startDate", details.get("startDate"));
+        if (details.containsKey("startDate")) body.put("startDate", resolveInstant(details.get("startDate")).toString());
         else body.put("startDate", Instant.now().plusSeconds(3600).toString());
-        if (details.containsKey("endDate")) body.put("endDate", details.get("endDate"));
+        if (details.containsKey("endDate")) body.put("endDate", resolveInstant(details.get("endDate")).toString());
         else body.put("endDate", Instant.now().plusSeconds(7200).toString());
         if (details.containsKey("minAge")) body.put("minAge", Integer.parseInt(details.get("minAge")));
         if (details.containsKey("maxAge")) body.put("maxAge", Integer.parseInt(details.get("maxAge")));
@@ -72,13 +82,19 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(post("/meetups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("organizer").roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Then("The meetup {string} is organized by {string}")
-    public void the_meetup_is_organized_by(String title, String username) throws Throwable {
-        stepDefs.mockMvc.perform(get("/meetups"))
-                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')]._links.organizer").exists());
+    public void the_meetup_is_organized_by(String title, String username) {
+        Meetup meetup = meetupRepository.findByTitle(title)
+                .orElseThrow(() -> new AssertionError("Meetup \"" + title + "\" not found"));
+
+        String actualOrganizer = meetup.getOrganizer() == null ? null : meetup.getOrganizer().getId();
+        if (!username.equals(actualOrganizer)) {
+            throw new AssertionError("Expected meetup \"" + title + "\" to be organized by " + username
+                    + " but was " + actualOrganizer);
+        }
     }
 
     @Given("a meetup {string} exists organized by {string}")
@@ -122,13 +138,13 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(patch("/meetups/" + meetup.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(meetup.getOrganizer().getId()).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Then("the meetup {string} now has title {string}")
     public void the_meetup_now_has_title(String title, String newTitle) throws Throwable {
         stepDefs.mockMvc.perform(get("/meetups"))
-                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + newTitle + "')].title").value(newTitle));
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == \"" + newTitle + "\")].title").value(newTitle));
     }
 
     @When("I delete the meetup {string}")
@@ -138,13 +154,20 @@ public class MeetupStepDefs {
                 .findFirst().orElseThrow();
 
         stepDefs.result = stepDefs.mockMvc.perform(delete("/meetups/" + meetup.getId())
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(meetup.getOrganizer().getId()).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Then("the meetup {string} no longer exists")
     public void the_meetup_no_longer_exists(String title) throws Throwable {
         stepDefs.mockMvc.perform(get("/meetups"))
-                .andExpect(jsonPath("$._embedded.meetups[?(@.title == '" + title + "')]", org.hamcrest.Matchers.empty()));
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == \"" + title + "\")]", org.hamcrest.Matchers.empty()));
+    }
+
+    @Then("the meetup {string} still exists")
+    public void the_meetup_still_exists(String title) throws Throwable {
+        stepDefs.mockMvc.perform(get("/meetups"))
+                .andExpect(jsonPath("$._embedded.meetups[?(@.title == \"" + title + "\")]",
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.empty())));
     }
 
     @Then("the meetup {string} has location {string} in {string}")
@@ -156,14 +179,6 @@ public class MeetupStepDefs {
 
     @When("I create a meetup with title {string}")
     public void i_create_a_meetup_with_title(String title) throws Throwable {
-        User organizer = userRepository.findById("organizer").orElseGet(() -> {
-            User u = new User();
-            u.setId("organizer");
-            u.setPassword(User.passwordEncoder.encode("password"));
-            u.setEmail("organizer@example.com");
-            return userRepository.save(u);
-        });
-
         Map<String, Object> body = new HashMap<>();
         body.put("title", title);
         body.put("startDate", Instant.now().plusSeconds(3600));
@@ -173,7 +188,7 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(post("/meetups")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user("organizer").roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @Given("the following meetups exist:")
@@ -205,15 +220,18 @@ public class MeetupStepDefs {
                 Meetup meetup = new Meetup();
                 meetup.setTitle(row.get("title"));
                 meetup.setOrganizer(rowOrganizer);
-                meetup.setStartDate(row.containsKey("startDate") ? Instant.parse(row.get("startDate")) : Instant.now().plusSeconds(3600));
-                meetup.setEndDate(row.containsKey("endDate") ? Instant.parse(row.get("endDate")) : Instant.now().plusSeconds(7200));
+                meetup.setStartDate(row.containsKey("startDate") ? resolveInstant(row.get("startDate")) : Instant.now().plusSeconds(3600));
+                meetup.setEndDate(row.containsKey("endDate") ? resolveInstant(row.get("endDate")) : Instant.now().plusSeconds(7200));
                 meetup.setCapacity(row.containsKey("capacity") ? Integer.parseInt(row.get("capacity")) : 10);
                 if (row.containsKey("visibility")) meetup.setVisibility(Visibility.valueOf(row.get("visibility")));
                 meetup.setStatus(row.containsKey("status") ? MeetupStatus.valueOf(row.get("status")) : MeetupStatus.OPEN);
                 if (row.containsKey("category")) {
+                    String category = row.get("category");
                     try {
-                        meetup.setCategory(cat.udl.eps.softarch.demo.domain.enums.Category.valueOf(row.get("category")));
-                    } catch (Exception e) {
+                        meetup.setCategory(Category.valueOf(category));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Invalid category \"" + category
+                                + "\" for meetup \"" + row.get("title") + "\"", e);
                     }
                 }
                 if (row.containsKey("city")) {
@@ -390,7 +408,21 @@ public class MeetupStepDefs {
                 .findFirst().orElseThrow();
 
         stepDefs.result = stepDefs.mockMvc.perform(get("/meetups/" + meetup.getId())
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(stepDefs.currentUser).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
+    }
+
+    private static Instant resolveInstant(String value) {
+        Matcher matcher = RELATIVE_INSTANT.matcher(value.trim());
+        if (!matcher.matches()) {
+            return Instant.parse(value);
+        }
+        long amount = Long.parseLong(matcher.group(2));
+        if ("-".equals(matcher.group(1))) amount = -amount;
+        String unit = matcher.group(3).toLowerCase(Locale.ROOT);
+        ChronoUnit chronoUnit = unit.startsWith("m") ? ChronoUnit.MINUTES
+                : unit.startsWith("h") ? ChronoUnit.HOURS
+                : ChronoUnit.DAYS;
+        return Instant.now().plus(amount, chronoUnit);
     }
 
     @When("I update the meetup {string} status to {string}")
@@ -405,7 +437,7 @@ public class MeetupStepDefs {
         stepDefs.result = stepDefs.mockMvc.perform(patch("/meetups/" + meetup.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(stepDefs.mapper.writeValueAsString(body))
-                .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(stepDefs.currentUser).roles("USER")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 }
 

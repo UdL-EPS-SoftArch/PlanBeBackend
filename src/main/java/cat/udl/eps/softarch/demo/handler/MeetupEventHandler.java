@@ -32,9 +32,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * #43: notifies participants (CONFIRMED and WAITING) when the organizer cancels a meetup, reopens a
@@ -122,8 +122,8 @@ public class MeetupEventHandler {
     public void handleMeetupPostSave(Meetup meetup) {
         Meetup.LoadedState before = requireLoadedState(meetup);
         String organizerId = before.organizerId();
-        boolean wasCancelled = before.status() == MeetupStatus.CANCELLED;
-        boolean isCancelled = meetup.getStatus() == MeetupStatus.CANCELLED;
+        boolean wasCancelled = MeetupStatus.CANCELLED.equals(before.status());
+        boolean isCancelled = MeetupStatus.CANCELLED.equals(meetup.getStatus());
 
         if (!wasCancelled && isCancelled) {
             notifier.notifyAll(activeParticipants(meetup), organizerId, NotificationType.MEETUP_CANCELLED,
@@ -131,7 +131,7 @@ public class MeetupEventHandler {
           
             participationRepository.findByMeetupIdAndStatusIn(
                 meetup.getId(),
-                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING)
+                Set.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING)
             ).forEach(participation -> {
                 participation.setStatus(ParticipationStatus.CANCELLED);
                 participationRepository.save(participation);
@@ -158,13 +158,13 @@ public class MeetupEventHandler {
         // A bigger capacity frees spots, and (re)opening a meetup (DRAFT/CANCELLED -> OPEN, or OPEN/FULL set
         // by hand) may not match the counts: the waiting list is promoted (SPOT_FREED) and OPEN/FULL is
         // recalculated from the confirmed participants, whatever the client sent.
-        boolean statusToOpenOrFull = meetup.getStatus() != before.status()
-            && (meetup.getStatus() == MeetupStatus.OPEN || meetup.getStatus() == MeetupStatus.FULL);
+        boolean statusToOpenOrFull = !Objects.equals(meetup.getStatus(), before.status())
+            && (MeetupStatus.OPEN.equals(meetup.getStatus()) || MeetupStatus.FULL.equals(meetup.getStatus()));
         if (!Objects.equals(before.capacity(), meetup.getCapacity()) || statusToOpenOrFull) {
             waitingList.fillFreeSpots(meetup.getId());
         }
         // #53: finishing an occurrence of a recurring meetup creates the next one
-        if (before.status() != MeetupStatus.FINISHED && meetup.getStatus() == MeetupStatus.FINISHED) {
+        if (!MeetupStatus.FINISHED.equals(before.status()) && MeetupStatus.FINISHED.equals(meetup.getStatus())) {
             recurringMeetups.createNextOccurrence(meetup);
         }
         // Already notified: a second save of this same instance must not notify again.
@@ -173,7 +173,7 @@ public class MeetupEventHandler {
 
     private List<User> activeParticipants(Meetup meetup) {
         return participationRepository.findByMeetupIdAndStatusIn(meetup.getId(),
-                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))
+                Set.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))
             .stream().map(Participation::getParticipant).toList();
     }
 
@@ -244,7 +244,7 @@ public class MeetupEventHandler {
             return true;
         }
         return membershipRepository.findByGroupIdAndMemberId(group.getId(), authentication.getName())
-            .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
+            .filter(membership -> MembershipStatus.ACTIVE.equals(membership.getStatus()))
             .map(Membership::getRole)
             .filter(role -> role == GroupRole.OWNER || role == GroupRole.ADMIN)
             .isPresent();

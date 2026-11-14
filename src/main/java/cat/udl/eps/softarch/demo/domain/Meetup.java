@@ -1,11 +1,13 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.entities.CatalogEntityDeserializer;
 import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.*;
 
 import com.fasterxml.jackson.annotation.JsonIdentityReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
@@ -20,6 +22,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.DynamicUpdate;
+import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -52,15 +55,20 @@ public class Meetup extends UriEntity<Long> {
     @Column(nullable = false)
     private Integer capacity;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    @JsonDeserialize(using = CatalogEntityDeserializer.class)
+    @RestResource(exported = false)
     private Category category;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Visibility visibility = Visibility.PUBLIC;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "status_id", nullable = false)
+    @JsonDeserialize(using = CatalogEntityDeserializer.class)
+    @RestResource(exported = false)
     private MeetupStatus status = MeetupStatus.OPEN;
 
     @ManyToOne

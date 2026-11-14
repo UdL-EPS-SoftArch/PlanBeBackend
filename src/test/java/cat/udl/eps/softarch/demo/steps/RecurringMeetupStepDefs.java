@@ -139,9 +139,9 @@ public class RecurringMeetupStepDefs {
         assertThat(next.getRecurrence(), is(previous.getRecurrence()));
         assertThat(next.getLocation().getCity(), is(previous.getLocation().getCity()));
         assertThat(participationRepository.findByMeetupIdAndStatusIn(previous.getId(),
-            java.util.EnumSet.allOf(ParticipationStatus.class)), hasSize(1));
+            ParticipationStatus.values()), hasSize(1));
         assertThat(participationRepository.findByMeetupIdAndStatusIn(next.getId(),
-            java.util.EnumSet.allOf(ParticipationStatus.class)), hasSize(0));
+            ParticipationStatus.values()), hasSize(0));
     }
 
     @When("I create the meetup {string} starting on {string} with recurrence {string}")

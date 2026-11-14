@@ -27,7 +27,7 @@ public interface ParticipationRepository extends JpaRepository<Participation, Lo
         "or exists (select g from Group g where g.id = p.meetup.group.id and g.ownedBy.id = ?#{authentication.name}) " +
         "or exists (select ms from Membership ms where ms.group.id = p.meetup.group.id " +
         "and ms.member.id = ?#{authentication.name} " +
-        "and ms.status = cat.udl.eps.softarch.demo.domain.enums.MembershipStatus.ACTIVE " +
+        "and ms.status.id = 'ACTIVE' " +
         "and ms.role in (cat.udl.eps.softarch.demo.domain.enums.GroupRole.OWNER, " +
         "cat.udl.eps.softarch.demo.domain.enums.GroupRole.ADMIN))";
 

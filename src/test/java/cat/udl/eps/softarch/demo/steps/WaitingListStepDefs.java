@@ -83,19 +83,20 @@ public class WaitingListStepDefs {
 
     @When("I join the meetup")
     public void iJoinTheMeetup() throws Exception {
-        existingUser("me");
+        String username = AuthenticationStepDefs.currentUsername;
+        existingUser(username);
         String json = "{\"meetup\": \"/meetups/" + currentMeetup.getId() + "\"}";
         stepDefs.result = stepDefs.mockMvc.perform(post("/participations")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json)
-                .with(user("me")));
+                .with(AuthenticationStepDefs.authenticate()));
     }
 
     @When("a participant leaves the meetup")
     public void aParticipantLeavesTheMeetup() throws Exception {
         Participation p = participationRepository.findAll().stream()
                 .filter(p1 -> p1.getMeetup().getId().equals(currentMeetup.getId()))
-                .filter(p1 -> p1.getStatus() == ParticipationStatus.CONFIRMED)
+                .filter(p1 -> ParticipationStatus.CONFIRMED.equals(p1.getStatus()))
                 .min(Comparator.comparing(Participation::getId))
                 .orElseThrow();
         stepDefs.result = stepDefs.mockMvc.perform(delete("/participations/" + p.getId())
@@ -114,7 +115,7 @@ public class WaitingListStepDefs {
         TransactionSynchronizationManager.bindResource(entityManagerFactory, new EntityManagerHolder(entityManager));
         try {
             entityManager.find(Meetup.class, meetupId);   // loaded as OPEN by "this" request
-            jdbcTemplate.update("update meetup set status = 'CANCELLED' where id = ?", meetupId);   // the other one
+            jdbcTemplate.update("update meetup set status_id = 'CANCELLED' where id = ?", meetupId);   // the other one
             waitingList.fillFreeSpots(meetupId);
         } finally {
             TransactionSynchronizationManager.unbindResource(entityManagerFactory);
@@ -130,7 +131,7 @@ public class WaitingListStepDefs {
 
     @Then("my participation status should be {string}")
     public void myParticipationStatusShouldBe(String status) {
-        assertEquals(ParticipationStatus.valueOf(status), statusOf("me"));
+        assertEquals(ParticipationStatus.valueOf(status), statusOf(AuthenticationStepDefs.currentUsername));
     }
 
     @Then("the waiting user status should be {string}")
