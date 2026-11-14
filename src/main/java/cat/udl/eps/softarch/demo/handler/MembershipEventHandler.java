@@ -95,7 +95,7 @@ public class MembershipEventHandler {
      */
     @HandleAfterCreate
     public void handleMembershipPostCreate(Membership membership) {
-        if (membership.getStatus() != MembershipStatus.PENDING) {
+        if (!MembershipStatus.PENDING.equals(membership.getStatus())) {
             return;
         }
         Group group = membership.getGroup();
@@ -125,8 +125,8 @@ public class MembershipEventHandler {
         // The member, the group and the join date are immutable. The status only moves from PENDING to ACTIVE,
         // which is how an OWNER or an ADMIN approves a join request (RF-5.3).
         boolean statusChanged = !Objects.equals(before.status(), membership.getStatus());
-        boolean approvesRequest = before.status() == MembershipStatus.PENDING
-            && membership.getStatus() == MembershipStatus.ACTIVE;
+        boolean approvesRequest = MembershipStatus.PENDING.equals(before.status())
+            && MembershipStatus.ACTIVE.equals(membership.getStatus());
         if (!Objects.equals(before.groupId(), group.getId())
             || !Objects.equals(before.memberId(),
                 membership.getMember() == null ? null : membership.getMember().getId())
@@ -198,10 +198,10 @@ public class MembershipEventHandler {
      */
     private GroupRole roleInGroup(Long groupId, String username, Membership.LoadedState before) {
         if (before != null && Objects.equals(before.memberId(), username)) {
-            return before.status() == MembershipStatus.ACTIVE ? before.role() : GroupRole.MEMBER;
+            return MembershipStatus.ACTIVE.equals(before.status()) ? before.role() : GroupRole.MEMBER;
         }
         return membershipRepository.findByGroupIdAndMemberId(groupId, username)
-            .filter(m -> m.getStatus() == MembershipStatus.ACTIVE)
+            .filter(m -> MembershipStatus.ACTIVE.equals(m.getStatus()))
             .map(Membership::getRole)
             .orElse(GroupRole.MEMBER);
     }

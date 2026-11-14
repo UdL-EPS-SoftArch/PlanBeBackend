@@ -86,11 +86,11 @@ public class ReportEventHandler {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the status of a report can be changed");
         }
 
-        if (before.status() != ReportStatus.OPEN) {
+        if (!ReportStatus.OPEN.equals(before.status())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Report already " + before.status());
         }
 
-        if (report.getStatus() != ReportStatus.RESOLVED && report.getStatus() != ReportStatus.DISMISSED) {
+        if (!ReportStatus.RESOLVED.equals(report.getStatus()) && !ReportStatus.DISMISSED.equals(report.getStatus())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A report can only be marked RESOLVED or DISMISSED");
         }
     }

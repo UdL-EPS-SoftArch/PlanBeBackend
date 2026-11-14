@@ -25,8 +25,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.EnumSet;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Join / leave a meetup and waiting list (#22). Promotions and SPOT_FREED (#44) are done by {@link WaitingList}.
@@ -109,7 +109,7 @@ public class ParticipationEventHandler {
             }
         }
 
-        if (meetup.getStatus() == MeetupStatus.CANCELLED || meetup.getStatus() == MeetupStatus.FINISHED) {
+        if (MeetupStatus.CANCELLED.equals(meetup.getStatus()) || MeetupStatus.FINISHED.equals(meetup.getStatus())) {
             // Nobody would ever promote or notify this participation: fail clearly instead of a silent dead end.
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot join a meetup that is " + meetup.getStatus());
         }
@@ -117,7 +117,7 @@ public class ParticipationEventHandler {
         // Prevent duplicate joins. A CANCELLED participation does not count: the user may join again,
         // and the old row is kept untouched as history (nothing is deleted before the new row is saved).
         if (participationRepository.existsByParticipantIdAndMeetupIdAndStatusIn(user.getId(), meetup.getId(),
-                EnumSet.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))) {
+                Set.of(ParticipationStatus.CONFIRMED, ParticipationStatus.WAITING))) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already joined this meetup");
         }
 
@@ -163,21 +163,21 @@ public class ParticipationEventHandler {
         }
         ParticipationStatus from = before.status();
         ParticipationStatus to = participation.getStatus();
-        if (from == to) return;
+        if (Objects.equals(from, to)) return;
         // Rules for everyone, an ADMIN included:
-        if (from == ParticipationStatus.CANCELLED) {
+        if (ParticipationStatus.CANCELLED.equals(from)) {
             // Reactivating would bypass the queue (and could clash with a newer active participation).
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "A cancelled participation cannot be reactivated: join the meetup again with POST /participations");
         }
-        if (to == ParticipationStatus.WAITING) {
+        if (ParticipationStatus.WAITING.equals(to)) {
             // Only the system puts someone on the waiting list. A demoted CONFIRMED participant keeps their old
             // joinedAt, so WaitingList would promote them straight back with a false SPOT_FREED and skip the
             // people really waiting.
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                 "A participation cannot be moved to the waiting list by hand");
         }
-        if (!isAdmin() && to != ParticipationStatus.CANCELLED) {
+        if (!isAdmin() && !ParticipationStatus.CANCELLED.equals(to)) {
             // e.g. a WAITING user setting themselves to CONFIRMED: only WaitingList (or an ADMIN) promotes
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A participation can only be cancelled");
         }
@@ -205,8 +205,9 @@ public class ParticipationEventHandler {
     @HandleAfterSave
     public void handleAfterSave(Participation participation) {
         Participation.LoadedState before = requireLoadedState(participation);
-        if (before.status() == participation.getStatus()) return;
-        if (before.status() == ParticipationStatus.WAITING && participation.getStatus() == ParticipationStatus.CONFIRMED) {
+        if (Objects.equals(before.status(), participation.getStatus())) return;
+        if (ParticipationStatus.WAITING.equals(before.status())
+            && ParticipationStatus.CONFIRMED.equals(participation.getStatus())) {
             // #44: WAITING -> CONFIRMED by hand (only an ADMIN can do it) also tells the user.
             Meetup meetup = participation.getMeetup();
             notifier.notify(participation.getParticipant(), NotificationType.SPOT_FREED,
@@ -220,7 +221,7 @@ public class ParticipationEventHandler {
 
     @HandleAfterDelete
     public void handleAfterDelete(Participation participation) {
-        if (participation.getStatus() == ParticipationStatus.CONFIRMED) {
+        if (ParticipationStatus.CONFIRMED.equals(participation.getStatus())) {
             waitingList.fillFreeSpots(participation.getMeetup().getId());
         }
     }
@@ -234,7 +235,7 @@ public class ParticipationEventHandler {
         if (group == null || group.getId() == null || user == null || user.getId() == null) return false;
         if (group.getOwnedBy() != null && user.getId().equals(group.getOwnedBy().getId())) return true;
         return membershipRepository.findByGroupIdAndMemberId(group.getId(), user.getId())
-            .filter(membership -> membership.getStatus() == MembershipStatus.ACTIVE)
+            .filter(membership -> MembershipStatus.ACTIVE.equals(membership.getStatus()))
             .isPresent();
     }
 

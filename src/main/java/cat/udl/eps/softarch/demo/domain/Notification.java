@@ -1,8 +1,10 @@
 package cat.udl.eps.softarch.demo.domain;
 
+import cat.udl.eps.softarch.demo.domain.entities.CatalogEntityDeserializer;
 import cat.udl.eps.softarch.demo.domain.entities.UriEntity;
 import cat.udl.eps.softarch.demo.domain.enums.NotificationType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import tools.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,6 +15,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.validator.constraints.Length;
+import org.springframework.data.rest.core.annotation.RestResource;
 
 import java.time.Instant;
 
@@ -36,8 +39,10 @@ public class Notification extends UriEntity<Long> {
     private User recipient;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "type_id", nullable = false)
+    @JsonDeserialize(using = CatalogEntityDeserializer.class)
+    @RestResource(exported = false)
     private NotificationType type;
 
     @NotBlank

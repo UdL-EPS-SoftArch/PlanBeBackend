@@ -1,7 +1,6 @@
 package cat.udl.eps.softarch.demo.repository;
 
 import cat.udl.eps.softarch.demo.domain.Report;
-import cat.udl.eps.softarch.demo.domain.enums.ReportStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -27,6 +26,6 @@ public interface ReportRepository extends CrudRepository<Report, Long>, PagingAn
     Optional<Report> findById(@Param("id") Long id);
 
     /** GET /reports/search/findByStatus?status=OPEN : the ADMIN moderation queue (a user gets only their own). */
-    @Query("SELECT r FROM Report r WHERE r.status = :status AND (" + OWNERSHIP_CLAUSE + ")")
-    Page<Report> findByStatus(@Param("status") ReportStatus status, Pageable pageable);
+    @Query("SELECT r FROM Report r WHERE r.status.id = :status AND (" + OWNERSHIP_CLAUSE + ")")
+    Page<Report> findByStatus(@Param("status") String status, Pageable pageable);
 }
