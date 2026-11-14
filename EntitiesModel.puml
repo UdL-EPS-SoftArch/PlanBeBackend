@@ -10,6 +10,11 @@ package "domain.entities" {
     uri : String
     version : Long
   }
+  abstract class CatalogEntity {
+    id : String <<antiguo nombre del enum>>
+    name() : String
+  }
+  note bottom of CatalogEntity : Tablas de catálogo editables en tiempo de ejecución.\nEn JSON se serializan como su id (p. ej. "OPEN").
 }
 
 package "domain" {
@@ -32,7 +37,6 @@ package "domain" {
   class Interest extends UriEntity {
     id : Long
     name : String <<unique>>
-    category : Category
   }
 
   class Meetup extends UriEntity {
@@ -40,9 +44,7 @@ package "domain" {
     title : String
     description : String
     capacity : Integer
-    category : Category
     visibility : Visibility = PUBLIC
-    status : MeetupStatus = OPEN
     minAge : Integer
     maxAge : Integer
     targetGender : Gender
@@ -63,13 +65,11 @@ package "domain" {
 
   class Participation extends UriEntity {
     id : Long
-    status : ParticipationStatus
     joinedAt : Instant
   }
 
   class Invitation extends UriEntity {
     id : Long
-    status : InvitationStatus
     created : Instant
   }
 
@@ -86,7 +86,6 @@ package "domain" {
   class Membership extends UriEntity {
     id : Long
     role : GroupRole
-    status : MembershipStatus
     joinedAt : Instant
   }
 
@@ -111,7 +110,6 @@ package "domain" {
 
   class Notification extends UriEntity {
     id : Long
-    type : NotificationType
     message : String
     targetUri : String
     read : boolean
@@ -127,38 +125,54 @@ package "domain" {
     id : Long
     targetUri : String
     reason : String
-    status : ReportStatus
     created : Instant
   }
 }
 
-package "domain.enums" {
+package "domain.enums (catálogos)" {
+  class Category extends CatalogEntity {
+    description : String
+    color : String
+  }
+  class MeetupStatus extends CatalogEntity {
+    description : String
+    color : String
+    allowsComments : boolean
+  }
+  class ParticipationStatus extends CatalogEntity {
+    description : String
+    expirationDays : Integer
+  }
+  class InvitationStatus extends CatalogEntity {
+    description : String
+    expirationDays : Integer
+  }
+  class MembershipStatus extends CatalogEntity {
+    description : String
+    expirationDays : Integer
+  }
+  class NotificationType extends CatalogEntity {
+    description : String
+    icon : String
+  }
+  class ReportStatus extends CatalogEntity {
+    description : String
+    color : String
+  }
+  note "Valores iniciales (DBInitialization):\nCategory: TECHNOLOGY, SPORTS, ARTS, CULTURE, EDUCATION, HEALTH, OTHER\nMeetupStatus: DRAFT, OPEN, FULL, CANCELLED, FINISHED\nParticipationStatus: CONFIRMED, WAITING, CANCELLED\nInvitationStatus: PENDING, ACCEPTED, DECLINED\nMembershipStatus: PENDING, ACTIVE\nNotificationType: INVITATION, MEETUP_CANCELLED, MEETUP_UPDATED, SPOT_FREED, GROUP_REQUEST\nReportStatus: OPEN, RESOLVED, DISMISSED" as CatalogSeed
+}
+
+package "domain.enums (Java)" {
   enum Gender {
     MALE
     FEMALE
     NON_BINARY
     UNDISCLOSED
   }
-  enum Category {
-    TECHNOLOGY
-    SPORTS
-    ARTS
-    CULTURE
-    EDUCATION
-    HEALTH
-    OTHER
-  }
   enum Visibility {
     PUBLIC
     PRIVATE
     GROUP
-  }
-  enum MeetupStatus {
-    DRAFT
-    OPEN
-    FULL
-    CANCELLED
-    FINISHED
   }
   enum Recurrence {
     NONE
@@ -166,36 +180,10 @@ package "domain.enums" {
     BIWEEKLY
     MONTHLY
   }
-  enum ParticipationStatus {
-    CONFIRMED
-    WAITING
-    CANCELLED
-  }
-  enum InvitationStatus {
-    PENDING
-    ACCEPTED
-    DECLINED
-  }
   enum GroupRole {
     OWNER
     ADMIN
     MEMBER
-  }
-  enum MembershipStatus {
-    PENDING
-    ACTIVE
-  }
-  enum NotificationType {
-    INVITATION
-    MEETUP_CANCELLED
-    MEETUP_UPDATED
-    SPOT_FREED
-    GROUP_REQUEST
-  }
-  enum ReportStatus {
-    OPEN
-    RESOLVED
-    DISMISSED
   }
 }
 
@@ -228,6 +216,16 @@ Review "*" --> "1" User : reviewer
 Review "*" --> "1" Meetup : meetup
 ChatMessage "*" --> "1" User : sender
 ChatMessage "*" --> "1" Meetup : meetup
+
+' Catálogos
+Interest "*" --> "0..1" Category : category
+Meetup "*" --> "0..1" Category : category
+Meetup "*" --> "1" MeetupStatus : status
+Participation "*" --> "1" ParticipationStatus : status
+Invitation "*" --> "1" InvitationStatus : status
+Membership "*" --> "1" MembershipStatus : status
+Notification "*" --> "1" NotificationType : type
+Report "*" --> "1" ReportStatus : status
 
 ' Notificaciones y moderación
 Notification "*" --> "1" User : recipient

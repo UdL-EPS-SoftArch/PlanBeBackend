@@ -26,6 +26,7 @@ PlanBe propone un backend REST (HAL) para gestionar planes sociales con reglas d
 - **Moderación**: bloqueos entre usuarios y reportes con flujo de revisión.
 - **Quedadas recurrentes**: recurrencia semanal, quincenal o mensual con fecha de fin opcional; al finalizar una ocurrencia se genera la siguiente.
 - **Chat de quedada**: mensajes entre participantes confirmados, vía REST (`/chatMessages`) y en tiempo real por WebSocket/STOMP.
+- **Catálogos editables**: categorías, estados y tipos de notificación son tablas de catálogo que se pueden ampliar en tiempo de ejecución sin recompilar.
 
 ## Arquitectura y stack
 - **Java 21**
@@ -43,9 +44,25 @@ PlanBe propone un backend REST (HAL) para gestionar planes sociales con reglas d
 - Reglas de ciclo de vida y seguridad de dominio en handlers `@RepositoryEventHandler`.
 - Autorización a nivel de fila con SpEL en consultas `@Query`.
 - Endpoint auxiliar de identidad autenticada: `GET /identity`.
+- Los conceptos de negocio volátiles son **tablas de catálogo** (`CatalogEntity`) en lugar de enums de Java; solo los valores estructurales (`Gender`, `Visibility`, `Recurrence`, `GroupRole`) siguen siendo enums.
 
 ## Modelo de dominio (resumen)
-El modelo completo, con campos y enumerados, está en [`EntitiesModel.puml`](EntitiesModel.puml). Todas las entidades extienden `UriEntity` (`domain/entities`) y los enumerados están en `domain/enums`.
+El modelo completo, con campos, catálogos y enumerados, está en [`EntitiesModel.puml`](EntitiesModel.puml). Las entidades extienden `UriEntity` (`domain/entities`).
+
+### Catálogos
+`Category`, `MeetupStatus`, `ParticipationStatus`, `InvitationStatus`, `MembershipStatus`, `NotificationType` y `ReportStatus` (en `domain/enums`) extienden `CatalogEntity`: son tablas cuyo identificador es el antiguo nombre del enum. Las entidades los referencian con una clave foránea, pero en JSON se siguen enviando y recibiendo como texto (`"status": "OPEN"`, `"category": "SPORTS"`). `DBInitialization` crea los valores iniciales:
+
+| Catálogo | Valores iniciales | Campos adicionales |
+|---|---|---|
+| `Category` | TECHNOLOGY, SPORTS, ARTS, CULTURE, EDUCATION, HEALTH, OTHER | `description`, `color` |
+| `MeetupStatus` | DRAFT, OPEN, FULL, CANCELLED, FINISHED | `description`, `color`, `allowsComments` |
+| `ParticipationStatus` | CONFIRMED, WAITING, CANCELLED | `description`, `expirationDays` |
+| `InvitationStatus` | PENDING, ACCEPTED, DECLINED | `description`, `expirationDays` |
+| `MembershipStatus` | PENDING, ACTIVE | `description`, `expirationDays` |
+| `NotificationType` | INVITATION, MEETUP_CANCELLED, MEETUP_UPDATED, SPOT_FREED, GROUP_REQUEST | `description`, `icon` |
+| `ReportStatus` | OPEN, RESOLVED, DISMISSED | `description`, `color` |
+
+Las reglas de negocio (aforo, lista de espera, notificaciones...) dependen de los valores iniciales; los campos adicionales son descriptivos.
 
 ```mermaid
 classDiagram
@@ -63,10 +80,15 @@ classDiagram
     class Block
     class Report
     class ChatMessage
+    class Category
+    class MeetupStatus
 
     User "*" -- "*" Interest : interests
     Meetup "*" -- "*" Interest : tags
     Meetup *-- Location
+    Meetup "*" --> "0..1" Category : category
+    Meetup "*" --> "1" MeetupStatus : status
+    Interest "*" --> "0..1" Category : category
     Meetup "*" --> "1" User : organizer
     Meetup "*" --> "0..1" Group : group
     Meetup "0..1" --> "0..1" Meetup : previousOccurrence
@@ -98,6 +120,8 @@ classDiagram
 ### Recursos
 `/users`, `/interests`, `/meetups`, `/participations`, `/invitations`, `/groups`, `/memberships`, `/comments`, `/reviews`, `/chatMessages`, `/notifications`, `/blocks`, `/reports` y `/identity`.
 
+Catálogos: `/categories`, `/meetupStatuses`, `/participationStatuses`, `/invitationStatuses`, `/membershipStatuses`, `/notificationTypes` y `/reportStatuses`.
+
 Chat en tiempo real: endpoint STOMP `/ws`; se envía a `/app/meetups/{id}/chat` y se recibe en `/topic/meetups/{id}/chat`.
 
 ### Búsquedas disponibles (Spring Data REST)
@@ -125,7 +149,7 @@ Chat en tiempo real: endpoint STOMP `/ws`; se envía a `/app/meetups/{id}/chat` 
 Las búsquedas aplican el mismo filtro de filas que el listado de su recurso.
 
 ## Reglas de acceso
-- **Sin autenticación**: registro (`POST /users`), lectura de intereses, y listados/búsquedas de quedadas, grupos y valoraciones, filtrados a lo que es público.
+- **Sin autenticación**: registro (`POST /users`), lectura de intereses y de catálogos, y listados/búsquedas de quedadas, grupos y valoraciones, filtrados a lo que es público.
 - **Usuario autenticado**: cualquier escritura (`POST`/`PUT`/`PATCH`/`DELETE`), los recursos individuales (`/x/{id}`) y sus asociaciones (`/x/{id}/y`), usuarios, participaciones, invitaciones, notificaciones, bloqueos, reportes y recomendaciones.
 - **Filtro por filas**: cada repositorio limita lo que ve el usuario (p. ej. una quedada privada solo la ven su organizador, sus invitados y participantes, los miembros activos de su grupo y un ADMIN; una participación, su participante, el organizador, los gestores del grupo de la quedada y un ADMIN; las valoraciones siguen la visibilidad de su quedada).
 - **Solo `ROLE_ADMIN`**: crear, modificar y borrar intereses; resolver, modificar y borrar reportes.
