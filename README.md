@@ -62,8 +62,6 @@ El modelo completo, con campos, catálogos y enumerados, está en [`EntitiesMode
 | `NotificationType` | INVITATION, MEETUP_CANCELLED, MEETUP_UPDATED, SPOT_FREED, GROUP_REQUEST | `description`, `icon` |
 | `ReportStatus` | OPEN, RESOLVED, DISMISSED | `description`, `color` |
 
-Las reglas de negocio (aforo, lista de espera, notificaciones...) dependen de los valores iniciales; los campos adicionales son descriptivos.
-
 ```mermaid
 classDiagram
     class User
