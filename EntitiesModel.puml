@@ -1,37 +1,236 @@
 @startuml
+title PlanBe - Modelo de entidades
 
-class User extends UriEntity implements UserDetails {
-  username : String
-  password : String
-  email : String
-  displayName : String
-  bio : String
-  avatarUrl : String
-  city : String
-  birthDate : LocalDate
-  gender : Gender
-  showPersonalData : boolean
-  admin : boolean
-  getAge() : Integer
+hide empty members
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+
+package "domain.entities" {
+  abstract class UriEntity<ID> {
+    uri : String
+    version : Long
+  }
+  abstract class CatalogEntity {
+    id : String <<antiguo nombre del enum>>
+    name() : String
+  }
+  note bottom of CatalogEntity : Tablas de catálogo editables en tiempo de ejecución.\nEn JSON se serializan como su id (p. ej. "OPEN").
 }
 
-class Interest extends UriEntity {
-  id : Long
-  name : String
+package "domain" {
+  class User extends UriEntity {
+    id : String <<username>>
+    email : String
+    password : String
+    admin : boolean
+    displayName : String
+    bio : String
+    avatarUrl : String
+    city : String
+    birthDate : LocalDate
+    gender : Gender
+    showPersonalData : boolean
+    getAge() : Integer
+  }
+  note right of User : implements UserDetails\nadmin = true -> ROLE_ADMIN
+
+  class Interest extends UriEntity {
+    id : Long
+    name : String <<unique>>
+  }
+
+  class Meetup extends UriEntity {
+    id : Long
+    title : String
+    description : String
+    capacity : Integer
+    visibility : Visibility = PUBLIC
+    minAge : Integer
+    maxAge : Integer
+    targetGender : Gender
+    price : BigDecimal
+    startDate : Instant
+    endDate : Instant
+    recurrence : Recurrence = NONE
+    recurrenceEnd : LocalDate
+  }
+
+  class Location <<embeddable>> {
+    name : String
+    address : String
+    city : String
+    latitude : Double
+    longitude : Double
+  }
+
+  class Participation extends UriEntity {
+    id : Long
+    joinedAt : Instant
+  }
+
+  class Invitation extends UriEntity {
+    id : Long
+    created : Instant
+  }
+
+  class Group extends UriEntity {
+    id : Long
+    name : String
+    description : String
+    visibility : Visibility = PUBLIC
+    avatarUrl : String
+    created : Instant
+    modified : Instant
+  }
+
+  class Membership extends UriEntity {
+    id : Long
+    role : GroupRole
+    joinedAt : Instant
+  }
+
+  class Comment extends UriEntity {
+    id : Long
+    text : String
+    created : Instant
+  }
+
+  class Review extends UriEntity {
+    id : Long
+    rating : Integer
+    text : String
+    created : Instant
+  }
+
+  class ChatMessage extends UriEntity {
+    id : Long
+    text : String
+    sentAt : Instant
+  }
+
+  class Notification extends UriEntity {
+    id : Long
+    message : String
+    targetUri : String
+    read : boolean
+    created : Instant
+  }
+
+  class Block extends UriEntity {
+    id : Long
+    created : Instant
+  }
+
+  class Report extends UriEntity {
+    id : Long
+    targetUri : String
+    reason : String
+    created : Instant
+  }
 }
 
-enum Gender {
-  MALE
-  FEMALE
-  NON_BINARY
-  UNDISCLOSED
+package "domain.enums (catálogos)" {
+  class Category extends CatalogEntity {
+    description : String
+    color : String
+  }
+  class MeetupStatus extends CatalogEntity {
+    description : String
+    color : String
+    allowsComments : boolean
+  }
+  class ParticipationStatus extends CatalogEntity {
+    description : String
+    expirationDays : Integer
+  }
+  class InvitationStatus extends CatalogEntity {
+    description : String
+    expirationDays : Integer
+  }
+  class MembershipStatus extends CatalogEntity {
+    description : String
+    expirationDays : Integer
+  }
+  class NotificationType extends CatalogEntity {
+    description : String
+    icon : String
+  }
+  class ReportStatus extends CatalogEntity {
+    description : String
+    color : String
+  }
+  note "Valores iniciales (DBInitialization):\nCategory: TECHNOLOGY, SPORTS, ARTS, CULTURE, EDUCATION, HEALTH, OTHER\nMeetupStatus: DRAFT, OPEN, FULL, CANCELLED, FINISHED\nParticipationStatus: CONFIRMED, WAITING, CANCELLED\nInvitationStatus: PENDING, ACCEPTED, DECLINED\nMembershipStatus: PENDING, ACTIVE\nNotificationType: INVITATION, MEETUP_CANCELLED, MEETUP_UPDATED, SPOT_FREED, GROUP_REQUEST\nReportStatus: OPEN, RESOLVED, DISMISSED" as CatalogSeed
 }
 
-class UriEntity {
-  uri : String
+package "domain.enums (Java)" {
+  enum Gender {
+    MALE
+    FEMALE
+    NON_BINARY
+    UNDISCLOSED
+  }
+  enum Visibility {
+    PUBLIC
+    PRIVATE
+    GROUP
+  }
+  enum Recurrence {
+    NONE
+    WEEKLY
+    BIWEEKLY
+    MONTHLY
+  }
+  enum GroupRole {
+    OWNER
+    ADMIN
+    MEMBER
+  }
 }
 
-User "1" --right-- "*" Resource : owner <
+' Perfil
 User "*" --> "*" Interest : interests
+
+' Quedadas
+Meetup "*" --> "1" User : organizer
+Meetup "*" --> "0..1" Group : group
+Meetup *-- "0..1" Location : location
+Meetup "*" --> "*" Interest : tags
+Meetup "0..1" --> "0..1" Meetup : previousOccurrence
+
+' Participación e invitaciones
+Participation "*" --> "1" User : participant
+Participation "*" --> "1" Meetup : meetup
+Invitation "*" --> "1" User : invitee
+Invitation "*" --> "1" User : invitedBy
+Invitation "*" --> "1" Meetup : meetup
+
+' Grupos
+Group "*" --> "1" User : ownedBy
+Membership "*" --> "1" Group : group
+Membership "*" --> "1" User : member
+
+' Comentarios, valoraciones y chat
+Comment "*" --> "1" User : author
+Comment "*" --> "1" Meetup : meetup
+Review "*" --> "1" User : reviewer
+Review "*" --> "1" Meetup : meetup
+ChatMessage "*" --> "1" User : sender
+ChatMessage "*" --> "1" Meetup : meetup
+
+' Catálogos
+Interest "*" --> "0..1" Category : category
+Meetup "*" --> "0..1" Category : category
+Meetup "*" --> "1" MeetupStatus : status
+Participation "*" --> "1" ParticipationStatus : status
+Invitation "*" --> "1" InvitationStatus : status
+Membership "*" --> "1" MembershipStatus : status
+Notification "*" --> "1" NotificationType : type
+Report "*" --> "1" ReportStatus : status
+
+' Notificaciones y moderación
+Notification "*" --> "1" User : recipient
+Block "*" --> "1" User : blocker
+Block "*" --> "1" User : blocked
+Report "*" --> "1" User : reporter
 
 @enduml
