@@ -1,8 +1,13 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+
+WORKDIR /workspace
+COPY pom.xml .
+COPY src ./src
+RUN mvn -B -DskipTests package
+
 FROM eclipse-temurin:21-jre
 
-WORKDIR /home/app
-
-ADD ./target/*.jar ./app.jar
-
+WORKDIR /app
+COPY --from=build /workspace/target/*.jar app.jar
 EXPOSE 8080
-CMD java $JAVA_OPTS -Dspring.profiles.active=$SPRING_PROFILES_ACTIVE -jar app.jar
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]

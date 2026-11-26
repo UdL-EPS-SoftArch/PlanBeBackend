@@ -169,6 +169,16 @@ Referencia funcional completa y objetivo de endpoints: [`docs/PLAN.md`](docs/PLA
 - Ejecutar suite BDD Cucumber:
   - `mvn test -Dtest=CucumberTest`
 
+## Ejecución con Docker
+La imagen compila el proyecto con Maven y Java 21 durante el build:
+
+```bash
+docker build -t planbe-backend .
+docker run --rm -p 8080:8080 planbe-backend
+```
+
+La aplicación queda disponible en `http://localhost:8080`. Se pueden pasar variables de entorno de Spring al contenedor, por ejemplo `SPRING_PROFILES_ACTIVE`.
+
 ## Roadmap SDD (basado en `docs/PLAN.md`)
 | Iteración | Objetivo | Estado en repositorio |
 |---|---|---|
